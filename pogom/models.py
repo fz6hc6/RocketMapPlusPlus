@@ -48,7 +48,7 @@ args = get_args()
 flaskDb = FlaskDB()
 cache = TTLCache(maxsize=100, ttl=60 * 5)
 
-db_schema_version = 61
+db_schema_version = 62
 
 
 class MyRetryDB(RetryOperationalError, PooledMySQLDatabase):
@@ -1257,6 +1257,7 @@ class DeviceWorker(LatLongModel):
     fetching = Utf8mb4CharField(max_length=50, default='IDLE')
     scanning = SmallIntegerField(default=0)
     endpoint = Utf8mb4CharField(max_length=2000, default="")
+    requestedEndpoint = Utf8mb4CharField(max_length=2000, default="")
 
     @staticmethod
     def get_by_id(id, latitude=0, longitude=0):
@@ -4274,6 +4275,10 @@ def database_migrate(db, old_ver):
         )
     if old_ver < 61:
         db.execute_sql('DROP TABLE `geofence`;')
+    if old_ver < 62:
+        migrate(
+            migrator.add_column('deviceworker', 'requestedEndpoint', Utf8mb4CharField(max_length=100, default=""))
+        )
 
     # Always log that we're done.
     log.info('Schema upgrade complete.')

@@ -3712,12 +3712,19 @@ class Pogom(Flask):
         # Update the username of the device is sent along and incorrect in database
         username = request_json.get('username', '')
         if username != "" and username != deviceworker['username']:
-            log.info('Device {} updating username: {} => {}'.format(uuid, deviceworker['username'], username))
+            log.info('Device {} updating ownerusername: {} => {}'.format(uuid, deviceworker['username'], username))
             deviceworker['username'] = username
             self.save_device(deviceworker, True)
         # Update deviceusername
         if devicename != "" and devicename != deviceworker['name']:
+            log.info('Device {} updating deviceusername: {} => {}'.format(uuid, deviceworker['name'], devicename))
             deviceworker['name'] = devicename
+            self.save_device(deviceworker, True)
+# Update deviceusername
+        requestedEndpoint = re.sub(r'((\?|\&)longitude=-?[0-9]*\.?[0-9]*)|((\?|\&)latitude=-?[0-9]*\.?[0-9]*)|((\?|\&)timestamp=[0-9]*\.[0-9]*)|((\?|\&)uuid=[A-F0-9-]{36})','',request.full_path)
+        if requestedEndpoint != "" and requestedEndpoint != deviceworker['requestedEndpoint']:
+            log.info('Device {} updating requestedEndpoint: {} => {}'.format(uuid, deviceworker['requestedEndpoint'], requestedEndpoint))
+            deviceworker['requestedEndpoint'] = requestedEndpoint
             self.save_device(deviceworker, True)
 #MapControlled section
         if (endpoint.lower() == "mapcontrolled"):
