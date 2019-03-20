@@ -3726,6 +3726,12 @@ class Pogom(Flask):
             log.info('Device {} updating requestedEndpoint: {} => {}'.format(uuid, deviceworker['requestedEndpoint'], requestedEndpoint))
             deviceworker['requestedEndpoint'] = requestedEndpoint
             self.save_device(deviceworker, True)
+# Update PoGo version 
+        pogoversion = re.sub(r'pokemongo/([^\ ]*).*', r'\1', request.headers.get('User-Agent','Unknown'))
+        if pogoversion != "" and pogoversion != deviceworker['pogoversion']:
+            log.info('Device {} updating pogoversion: {} => {}'.format(uuid, deviceworker['pogoversion'], pogoversion))
+            deviceworker['pogoversion'] = pogoversion
+            self.save_device(deviceworker, True)
 #MapControlled section
         if (endpoint.lower() == "mapcontrolled"):
             endpoint_re = "(http[s]?://[^/]*/|/|)(?P<endpoint>[^\?]*)\??(?P<attributes>.*)"
