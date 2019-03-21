@@ -131,18 +131,18 @@ class Pogom(Flask):
         self.json_encoder = CustomJSONEncoder
         self.route("/", methods=['GET'])(self.fullmap)
         self.route("/raids", methods=['GET'])(self.raidview)
-        self.route("/devices", methods=['GET'])(self.devicesview)
         self.route("/quests", methods=['GET'])(self.questview)
         self.route("/auth_callback", methods=['GET'])(self.auth_callback)
         self.route("/auth_logout", methods=['GET'])(self.auth_logout)
         self.route("/raw_data", methods=['GET'])(self.raw_data)
         self.route("/raw_raid", methods=['POST'])(self.raw_raid)
-        self.route("/raw_devices", methods=['POST'])(self.raw_devices)
         self.route("/raw_quests", methods=['POST'])(self.raw_quests)
 
         self.route("/loc", methods=['GET'])(self.loc)
 
         if not args.map_only:
+            self.route("/devices", methods=['GET'])(self.devicesview)
+            self.route("/raw_devices", methods=['POST'])(self.raw_devices)
             self.route("/webhook", methods=['GET', 'POST'])(self.webhook)
             self.route("/walk_spawnpoint", methods=['GET', 'POST'])(self.old_walk_spawnpoint)
             self.route("/walk_gpx", methods=['GET', 'POST'])(self.old_walk_gpx)
