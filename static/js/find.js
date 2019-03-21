@@ -22,7 +22,7 @@ function updateStopsGymsList() {
             var thisPokestopLocation = { lat: list[key]['lat'], lng: list[key]['lng'] }
             if (currentVisibleMap.contains(thisPokestopLocation))
 	    {
-                stopGymList += '<tr onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name'] + '</td></tr>'
+                stopGymList += '<tr onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name'] + '</td></tr>'
             }
 	});
 
