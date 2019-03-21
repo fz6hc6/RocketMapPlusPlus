@@ -17,7 +17,7 @@ function showRaids(data) {
       $( "<tr/>", {
         "class": (val['is_ex_raid_eligible']?'exraid':'my-new-list'),
         "level": val['level'],
-        html: "<td>" + moment(val['start']).format('HH:mm') + " - " + moment(val['end']).format('HH:mm')  + "</td><td>"+(val['pokemon_id']?"<img src=\"/static/icons/"+ val['pokemon_id']+ ".png\">":"<img src=\"/static/images/raid/" + egg[val['level']] + "\">") + "</td><td><a target=\"_blank\" href=\"https://www.google.com/maps/dir/Current+Location/"+val['latitude']+","+val['longitude']+"\">" + val['name'] + "</a></br>Level "+val['level']+": "+val['pokemon_name']+ (val['move_1']?"("+val['move_1']:'') + (val['move_2']?"/"+val['move_2']+")":'') +"</br>Last scanned: "+ moment(val['last_scanned']).format('HH:mm') + "</td>"
+        html: "<td>" + moment(val['start']).format('HH:mm') + " - " + moment(val['end']).format('HH:mm')  + "</td><td>"+(val['pokemon_id']?"<img src=\"/static/icons/"+ val['pokemon_id']+ ".png\">":"<img src=\"/static/images/raid/" + egg[val['level']] + "\">") + "</td><td><a target=\"_blank\" href=\"./?lat="+val['latitude']+"&lon="+val['longitude']+"\">" + val['name'] + "</a></br>Level "+val['level']+": "+val['pokemon_name']+ (val['move_1']?"("+val['move_1']:'') + (val['move_2']?"/"+val['move_2']+")":'') +"</br>Last scanned: "+ moment(val['last_scanned']).format('HH:mm') + "</td>"
       }).appendTo( "tbody" );
     });
     applyFilter();

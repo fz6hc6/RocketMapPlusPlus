@@ -23,7 +23,7 @@ function showQuests(data) {
       $( "<tr/>", {
         "class": 'my-new-list',
         "type": val['reward_type'],
-        html: "<td><img class='reward-icon' src='static/icons/" + val['icon'] +".png' style='width:100px;height:100px;'></td><td><a target=\"_blank\" href=\"https://www.google.com/maps/dir/Current+Location/"+val['latitude']+","+val['longitude']+"\">" + val['name'] + "</a></br> \
+        html: "<td><img class='reward-icon' src='static/icons/" + val['icon'] +".png' style='width:100px;height:100px;'></td><td><a target=\"_blank\" href=\"./?lat="+val['latitude']+"&lon="+val['longitude']+"\">" + val['name'] + "</a></br> \
           Quest: "+ val['quest_text']+ "</br> \
           Reward: "+ val['reward_text'] + "</br> \
           </td><td><img class='pokestop img sprite' src='" + imgSrc + "' style='width:100px;height:100px;'></td><td>"+ moment(val['last_scanned']).format('HH:mm') + " - <span class='label-countdown' disappears-at='" + val['expiration'] + "'>00m00s</span> left</td>"
