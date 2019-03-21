@@ -1364,6 +1364,8 @@ class Pogom(Flask):
                                                 'move_2': raidpokemonmove2 if raidpokemonmove2 else 0,
                                                 'is_ex_raid_eligible':
                                                     fort.get('isExRaidEligible', False),
+                                                'is_ex_eligible':
+                                                    fort.get('isExRaidEligible', False),
                                                 'ex_raid_eligible':
                                                     fort.get('isExRaidEligible', False),
                                                 'name': gym_name,
@@ -1531,6 +1533,8 @@ class Pogom(Flask):
                         'last_modified':
                             float(fort['lastModifiedTimestampMs']),
                         'ex_raid_eligible':
+                            fort.get('isExRaidEligible', False),
+                        'is_ex_eligible':
                             fort.get('isExRaidEligible', False)
                     })
 
