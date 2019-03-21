@@ -102,6 +102,7 @@
             event.preventDefault()
             event.stopPropagation()
 	    updateStopsGymsList()
+	    updateQuestList()
             $find.classList.toggle('visible')
         })
     }

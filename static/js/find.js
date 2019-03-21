@@ -1,59 +1,133 @@
 //
 // Stilen from https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
 //
-function compare(a,b) {
-  if (a.name < b.name)
+function findcompare(a,b) {
+  if (a.type + a.name < b.type + b.name)
     return -1;
-  if (a.name > b.name)
+  if (a.type + a.name > b.type + b.name)
     return 1;
   return 0;
 }
 
-function updateStopsGymsList() {
+function updateQuestList() {
 	// Bounds of the currently visible map
     var currentVisibleMap = map.getBounds()
 
-        var stopGymList  = '<table><tr><th>Name</th></tr>'
-	var list = filterStopsGyms(document.getElementById("fp_sg_filter").value.toLowerCase())
-	list = list.sort(compare)
+        //var stopGymList  = '<table><tr><th>Name</th></tr>'
+        var stopGymList  = '<div class="QuestList">'
+	var list = getStops()
+	var list = list.sort(findcompare)
+
+	var list = list.filter(function(item) {
+            if (item['quest'] === undefined){
+		return false
+	    }
+	    if (item['quest'].toLowerCase().includes(document.getElementById("fp_quest_filter").value.toLowerCase())){
+                return true
+	    }
+	    if (item['name'].toLowerCase().includes(document.getElementById("fp_quest_filter").value.toLowerCase())){
+                return true
+	    }
+	    return false
+	});
 
 
 	$.each(list, function (key, value) {
             var thisPokestopLocation = { lat: list[key]['lat'], lng: list[key]['lng'] }
             if (currentVisibleMap.contains(thisPokestopLocation))
 	    {
-                stopGymList += '<tr onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name'] + '</td></tr>'
+                //stopGymList += '<tr onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name'] + '</td></tr>'
+                stopGymList += '<div class="questtooltip" onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name']
+		if (value['quest']){
+		    stopGymList += '<span class="questtext">' + value['quest'] + '</span></div><br />'
+		}
+		else
+		{
+		    stopGymList += '</div><br />'
+		}
             }
 	});
+
+	stopGymList += '</div>'
+
+	document.getElementById('findQuests').innerHTML = stopGymList
+}
+
+function updateStopsGymsList() {
+	// Bounds of the currently visible map
+    var currentVisibleMap = map.getBounds()
+
+        //var stopGymList  = '<table><tr><th>Name</th></tr>'
+        var stopGymList  = '<div class="gymStopList">'
+	var stopList = getStops()
+	var gymList = getGyms()
+	if (stopList.length >= 1) {
+	   var list = stopList.concat(gymList)
+	}
+	else {
+	    var list = gymList
+	}
+	var list = list.sort(findcompare)
+
+	var list = list.filter(function(item) {
+	    return item['name'].toLowerCase().includes(document.getElementById("fp_sg_filter").value.toLowerCase())
+	});
+
+
+	$.each(list, function (key, value) {
+            var thisPokestopLocation = { lat: list[key]['lat'], lng: list[key]['lng'] }
+            if (currentVisibleMap.contains(thisPokestopLocation))
+	    {
+                //stopGymList += '<tr onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name'] + '</td></tr>'
+                stopGymList += '<div class="questtooltip" onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name']
+		if (value['quest']){
+		    stopGymList += '<span class="questtext">' + value['quest'] + '</span></div><br />'
+		}
+		else
+		{
+		    stopGymList += '</div><br />'
+		}
+            }
+	});
+
+	stopGymList += '</div>'
 
 	document.getElementById('findStopsGyms').innerHTML = stopGymList
 }
 
-function filterStopsGyms(filter){
+function getGyms(){
+	var list = new Array()
+
+        $.each(mapData.gyms, function (key, value) {
+	    var stop = {
+	        type : 'gym',
+  	        name : value['name'],
+	        lat : value['latitude'],
+	        lng : value['longitude'],
+	        image : construct_gym_icon(value)
+	    }
+	    list.push(stop)
+  	});
+
+	return list
+}
+
+function getStops(){
 	var list = new Array()
 
         $.each(mapData.pokestops, function (key, value) {
- 	    if (value['name'].toLowerCase().includes(filter) || filter == ''){
-	        var stop = {
- 	            name : value['name'],
-	            lat : value['latitude'],
-	            lng : value['longitude'],
-		    image : construct_pokestop_icon(value)
-	        }
-	        list.push(stop)
+	    var stop = {
+	        type : 'stop',
+ 	        name : value['name'],
+	        lat : value['latitude'],
+	        lng : value['longitude'],
+	        image : construct_pokestop_icon(value)
 	    }
+	    if (value['quest']['quest_text'] !== undefined){
+                stop['quest']=value['quest']['quest_text']+ '<br />' + value['quest']['reward_text']
+	    }
+	    list.push(stop)
         });
-        $.each(mapData.gyms, function (key, value) {
- 	    if (value['name'].toLowerCase().includes(filter) || filter == ''){
-	        var stop = {
-  	            name : value['name'],
-	            lat : value['latitude'],
-	            lng : value['longitude'],
-		    image : construct_gym_icon(value)
-		}
-	        list.push(stop)
-	    }
-  	});
 
 	return list
 }
