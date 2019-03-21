@@ -625,7 +625,14 @@ class Pogom(Flask):
                 deviceworker['latitude'] = lat
                 deviceworker['longitude'] = lng
 
-            self.save_device(deviceworker)
+            # Update PoGo version
+            pogoversion = re.sub(r'pokemongo/([^\ ]*).*', r'\1', request.headers.get('User-Agent', 'Unknown'))
+            if pogoversion != "" and pogoversion != deviceworker['pogoversion']:
+                log.info('Device {} updating pogoversion: {} => {}'.format(uuid, deviceworker['pogoversion'], pogoversion))
+                deviceworker['pogoversion'] = pogoversion
+                self.save_device(deviceworker, True)
+            else:
+                self.save_device(deviceworker)
 
             self.track_event('worker', 'sent', uuid)
 
@@ -3730,7 +3737,7 @@ class Pogom(Flask):
             log.info('Device {} updating requestedEndpoint: {} => {}'.format(uuid, deviceworker['requestedEndpoint'], requestedEndpoint))
             deviceworker['requestedEndpoint'] = requestedEndpoint
             self.save_device(deviceworker, True)
-# Update PoGo version 
+# Update PoGo version
         pogoversion = re.sub(r'pokemongo/([^\ ]*).*', r'\1', request.headers.get('User-Agent','Unknown'))
         if pogoversion != "" and pogoversion != deviceworker['pogoversion']:
             log.info('Device {} updating pogoversion: {} => {}'.format(uuid, deviceworker['pogoversion'], pogoversion))
