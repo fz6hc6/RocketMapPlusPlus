@@ -131,18 +131,18 @@ class Pogom(Flask):
         self.json_encoder = CustomJSONEncoder
         self.route("/", methods=['GET'])(self.fullmap)
         self.route("/raids", methods=['GET'])(self.raidview)
-        self.route("/devices", methods=['GET'])(self.devicesview)
         self.route("/quests", methods=['GET'])(self.questview)
         self.route("/auth_callback", methods=['GET'])(self.auth_callback)
         self.route("/auth_logout", methods=['GET'])(self.auth_logout)
         self.route("/raw_data", methods=['GET'])(self.raw_data)
         self.route("/raw_raid", methods=['POST'])(self.raw_raid)
-        self.route("/raw_devices", methods=['POST'])(self.raw_devices)
         self.route("/raw_quests", methods=['POST'])(self.raw_quests)
 
         self.route("/loc", methods=['GET'])(self.loc)
 
         if not args.map_only:
+            self.route("/devices", methods=['GET'])(self.devicesview)
+            self.route("/raw_devices", methods=['POST'])(self.raw_devices)
             self.route("/webhook", methods=['GET', 'POST'])(self.webhook)
             self.route("/walk_spawnpoint", methods=['GET', 'POST'])(self.old_walk_spawnpoint)
             self.route("/walk_gpx", methods=['GET', 'POST'])(self.old_walk_gpx)
@@ -3716,12 +3716,25 @@ class Pogom(Flask):
         # Update the username of the device is sent along and incorrect in database
         username = request_json.get('username', '')
         if username != "" and username != deviceworker['username']:
-            log.info('Device {} updating username: {} => {}'.format(uuid, deviceworker['username'], username))
+            log.info('Device {} updating ownerusername: {} => {}'.format(uuid, deviceworker['username'], username))
             deviceworker['username'] = username
             self.save_device(deviceworker, True)
         # Update deviceusername
         if devicename != "" and devicename != deviceworker['name']:
+            log.info('Device {} updating deviceusername: {} => {}'.format(uuid, deviceworker['name'], devicename))
             deviceworker['name'] = devicename
+            self.save_device(deviceworker, True)
+# Update deviceusername
+        requestedEndpoint = re.sub(r'((\?|\&)longitude=-?[0-9]*\.?[0-9]*)|((\?|\&)latitude=-?[0-9]*\.?[0-9]*)|((\?|\&)timestamp=[0-9]*\.[0-9]*)|((\?|\&)uuid=[A-F0-9-]{36})','',request.full_path)
+        if requestedEndpoint != "" and requestedEndpoint != deviceworker['requestedEndpoint']:
+            log.info('Device {} updating requestedEndpoint: {} => {}'.format(uuid, deviceworker['requestedEndpoint'], requestedEndpoint))
+            deviceworker['requestedEndpoint'] = requestedEndpoint
+            self.save_device(deviceworker, True)
+# Update PoGo version 
+        pogoversion = re.sub(r'pokemongo/([^\ ]*).*', r'\1', request.headers.get('User-Agent','Unknown'))
+        if pogoversion != "" and pogoversion != deviceworker['pogoversion']:
+            log.info('Device {} updating pogoversion: {} => {}'.format(uuid, deviceworker['pogoversion'], pogoversion))
+            deviceworker['pogoversion'] = pogoversion
             self.save_device(deviceworker, True)
 #MapControlled section
         if (endpoint.lower() == "mapcontrolled"):
