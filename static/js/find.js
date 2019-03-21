@@ -22,7 +22,7 @@ function updateStopsGymsList() {
             var thisPokestopLocation = { lat: list[key]['lat'], lng: list[key]['lng'] }
             if (currentVisibleMap.contains(thisPokestopLocation))
 	    {
-                stopGymList += '<tr onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()"><td>' + list[key]['name'] + '</td></tr>'
+                stopGymList += '<tr onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name'] + '</td></tr>'
             }
 	});
 
@@ -47,7 +47,8 @@ function filterStopsGyms(filter){
 	        var stop = {
   	            name : value['name'],
 	            lat : value['latitude'],
-	            lng : value['longitude']
+	            lng : value['longitude'],
+		    image : construct_gym_icon(value)
 		}
 	        list.push(stop)
 	    }
@@ -75,3 +76,102 @@ function fp_remove_circle(){
       fp_circled.setMap(null);
 }
 
+function construct_gym_icon(gym){
+    const hasActiveRaid = gym.raid && gym.raid.end > Date.now()
+    const gymInBattle = getGymInBattle(gym)
+    const gymExRaidEligible = getGymExRaidEligible(gym)
+    const gymOngoingRaid = gym.raid && Date.now() < gym.raid.end && Date.now() > gym.raid.start
+
+    if (gymOngoingRaid)
+    {
+    	var iconname = `raid/${gymTypes[gym.team_id]}`
+        if (gym.raid.pokemon_id && pokemonWithImages.indexOf(gym.raid.pokemon_id) !== -1)
+	{
+            iconname += `_${gym.raid.pokemon_id}`
+            if (gym.raid.form > 0)
+            {
+                if (gym.raid.form >= 45 && gym.raid.form <= 80)
+		{    
+                    if(gym.raid.form % 2 == 0)
+                    {
+                        iconname += 'A'
+                    }
+                    else
+                    {
+                        iconname += `_${gym.raid.form}`
+                    }
+                }
+            }
+            else
+            {
+                iconname += `_${gym.raid.level}_unknown`
+            }
+            if (gymExRaidEligible)
+            {
+                iconname += '_ExRaidEligible'
+            }
+            markerImage = `static/images/raid/${iconname}.png`
+        }
+    }
+//  EGGS :)
+    else if (gym.raid && gym.raid.end > Date.now())
+    {
+        if (gym.raid.pokemon_id)
+        {
+            var iconname = `raid/${gymTypes[gym.team_id]}`
+            if (pokemonWithImages.indexOf(gym.raid.pokemon_id) !== -1)
+            {
+                iconname += `_${gym.raid.pokemon_id}`
+                if (gym.raid.form > 0)
+                {
+                    if (gym.raid.form >= 45 && gym.raid.form <= 80)
+                    {
+                        if(gym.raid.form % 2 == 0)
+                        {
+                            iconname += 'A'
+                        }
+                    }
+                    else
+                    {
+                        iconname += `_${gym.raid.form}`
+                    }
+                }
+            }
+            else
+            {
+                iconname += `_${gym.raid.level}_unknown`
+            }
+            if (gymExRaidEligible)
+            {
+                iconname += '_ExRaidEligible'
+            }
+        }
+        else
+        {
+            var iconname = `raid/${gymTypes[gym.team_id]}_${getGymLevel(gym)}_${gym.raid.level}`
+            if (gymInBattle)
+            {
+                iconname += '_isInBattle'
+            }
+            if (gymExRaidEligible)
+            {
+                iconname += '_ExRaidEligible'
+            }
+        }
+    }
+// No raid in progress
+    else
+    {
+        var iconname = `gym/${gymTypes[gym.team_id]}_${getGymLevel(gym)}`
+        if (gymInBattle)
+        {
+            iconname += '_isInBattle'
+        }
+        if (gymExRaidEligible)
+        {
+            iconname += '_ExRaidEligible'
+        }
+    }
+
+    return iconname + '.png'
+}
