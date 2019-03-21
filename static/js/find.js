@@ -35,9 +35,10 @@ function filterStopsGyms(filter){
         $.each(mapData.pokestops, function (key, value) {
  	    if (value['name'].toLowerCase().includes(filter) || filter == ''){
 	        var stop = {
- 	           name : value['name'],
-	           lat : value['latitude'],
-	           lng : value['longitude']
+ 	            name : value['name'],
+	            lat : value['latitude'],
+	            lng : value['longitude'],
+		    image : construct_pokestop_icon(value)
 	        }
 	        list.push(stop)
 	    }
@@ -74,6 +75,24 @@ function fp_draw_circle(lat, lng){
 
 function fp_remove_circle(){
       fp_circled.setMap(null);
+}
+
+function construct_pokestop_icon(pokestop){
+    var icon = 'Pokestop'
+    if (pokestop['lure_expiration'])
+    {
+        icon += 'Lured'
+    }
+    if (Boolean(pokestop.pokemon && pokestop.pokemon.length))
+    {
+        icon += '_Nearby'
+    }
+    if (Boolean(pokestop.quest && pokestop.quest.type))
+    {
+        icon += '_Quest'
+    }
+    return `pokestop/${icon}.png`
+
 }
 
 function construct_gym_icon(gym){
