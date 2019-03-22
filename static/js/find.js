@@ -251,7 +251,7 @@ function construct_gym_icon(gym){
         }
         else
         {
-            var iconname = `raid/${gymTypes[gym.team_id]}_${getGymLevel(gym)}_${gym.raid.level}`
+            var iconname = `gym/${gymTypes[gym.team_id]}_${getGymLevel(gym)}_${gym.raid.level}`
             if (gymInBattle)
             {
                 iconname += '_isInBattle'
