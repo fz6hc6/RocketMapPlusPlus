@@ -1,3 +1,4 @@
+//w
 //
 // Stilen from https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
 //
@@ -37,13 +38,13 @@ function updateQuestList() {
             if (currentVisibleMap.contains(thisPokestopLocation))
 	    {
                 //stopGymList += '<tr onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name'] + '</td></tr>'
-                stopGymList += '<div class="questtooltip" onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td><img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name']
+                stopGymList += '<div class="questtooltip" onmouseover="fp_draw_circle('+ list[key]['lat'] + ', '+ list[key]['lng'] +')" onmouseout="fp_remove_circle()" ondblclick="centerMap('+ list[key]['lat'] +', '+ list[key]['lng'] +', 17)"><td>'
 		if (value['quest']){
-		    stopGymList += '<span class="questtext">' + value['quest'] + '</span></div><br />'
+	            stopGymList += '<img src="static/icons/' +  list[key]['questicon'] + '" class="stopgym-image" />' + list[key]['name'] + '<span class="questtext">' + value['quest'] + '</span></div><br />'
 		}
 		else
 		{
-		    stopGymList += '</div><br />'
+		    stopGymList += '<img src="static/images/' +  list[key]['image'] + '" class="stopgym-image" />' + list[key]['name'] + '</div><br />'
 		}
             }
 	});
@@ -98,7 +99,11 @@ function updateStopsGymsList() {
 function getGyms(){
 	var list = new Array()
 
-        $.each(mapData.gyms, function (key, value) {
+        if (mapData.gyms.length == 0){
+	    return list
+	}
+
+	$.each(mapData.gyms, function (key, value) {
 	    var stop = {
 	        type : 'gym',
   	        name : value['name'],
@@ -115,6 +120,10 @@ function getGyms(){
 function getStops(){
 	var list = new Array()
 
+        if (mapData.pokestops.length == 0){
+	    return list
+	}
+
         $.each(mapData.pokestops, function (key, value) {
 	    var stop = {
 	        type : 'stop',
@@ -124,6 +133,7 @@ function getStops(){
 	        image : construct_pokestop_icon(value)
 	    }
 	    if (value['quest']['quest_text'] !== undefined){
+		stop['questicon']=value['quest']['icon'] + '.png'
                 stop['quest']=value['quest']['quest_text']+ '<br />' + value['quest']['reward_text']
 	    }
 	    list.push(stop)
@@ -195,23 +205,23 @@ function construct_gym_icon(gym){
                     }
                 }
             }
-            else
-            {
-                iconname += `_${gym.raid.level}_unknown`
-            }
-            if (gymExRaidEligible)
-            {
-                iconname += '_ExRaidEligible'
-            }
-            markerImage = `static/images/raid/${iconname}.png`
         }
+        else
+        {
+            iconname += `_${gym.raid.level}_unknown`
+        }
+        if (gymExRaidEligible)
+        {
+            iconname += '_ExRaidEligible'
+	}
+        
     }
 //  EGGS :)
     else if (gym.raid && gym.raid.end > Date.now())
     {
         if (gym.raid.pokemon_id)
         {
-            var iconname = `raid/${gymTypes[gym.team_id]}`
+            var iconname = `gym/${gymTypes[gym.team_id]}`
             if (pokemonWithImages.indexOf(gym.raid.pokemon_id) !== -1)
             {
                 iconname += `_${gym.raid.pokemon_id}`
@@ -241,7 +251,7 @@ function construct_gym_icon(gym){
         }
         else
         {
-            var iconname = `raid/${gymTypes[gym.team_id]}_${getGymLevel(gym)}_${gym.raid.level}`
+            var iconname = `gym/${gymTypes[gym.team_id]}_${getGymLevel(gym)}_${gym.raid.level}`
             if (gymInBattle)
             {
                 iconname += '_isInBattle'
