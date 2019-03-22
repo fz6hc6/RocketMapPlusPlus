@@ -527,21 +527,16 @@
               <center><h1>Loading...</h1></center>
             </div>
 	  </div>
-	  {% if false %}
           <h3><i class="fa fa-binoculars fa-fw"></i>Quests</h3>
           <div>
-            <div class="form-control switch-container" >
-              <h3>Start map at my position</h3>
-              <div class="onoffswitch">
-                <input id="start-at-user-location-switch" type="checkbox" name="start-at-user-location-switch" class="onoffswitch-checkbox" checked/>
-                <label class="onoffswitch-label" for="start-at-user-location-switch">
-                <span class="switch-label" data-on="On" data-off="Off"></span>
-                <span class="switch-handle"></span>
-                </label>
-              </div>
+            <div id="findQuestFilter" class="form-control switch-container">
+              <h3>Filter: </h3>
+	      <input type="text" id="fp_quest_filter" onchange="updateQuestList()"/>
+            </div>
+            <div id="findQuests" class="form-control switch-container">
+              <center><h1>Loading...</h1></center>
             </div>
           </div>
-{% endif %}
         </div>
       </nav>
 {% endif %}
