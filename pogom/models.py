@@ -9,6 +9,8 @@ import gc
 import time
 import math
 
+from functools import reduce
+
 from peewee import (InsertQuery, Check, CompositeKey, ForeignKeyField,
                     SmallIntegerField, IntegerField, CharField, DoubleField,
                     BooleanField, DateTimeField, fn, DeleteQuery, FloatField,
@@ -766,7 +768,7 @@ class Pokestop(LatLongModel):
 
             result = []
             while len(orderedpokestops) > 0:
-                value = orderedpokestops.items()[0][1]
+                value = list(orderedpokestops.items())[0][1]
                 result.append((value['latitude'], value['longitude'], value['key']))
                 newlat = value['latitude']
                 newlong = value['longitude']
@@ -1145,7 +1147,7 @@ class Gym(LatLongModel):
 
             result = []
             while len(orderedgyms) > 0:
-                value = orderedgyms.items()[0][1]
+                value = list(orderedgyms.items())[0][1]
                 orderedgyms.popitem(last=False)
                 if len(result) == 0 or geopy.distance.vincenty((newlat, newlong), (value['latitude'], value['longitude'])).km * 1000 > teleport_ignore:
                     result.append((value['latitude'], value['longitude'], value['key']))
@@ -3788,7 +3790,7 @@ def bulk_upsert(cls, data, db):
     # placeholders for VALUES(%s, %s, ...) so we can use executemany().
     # We use peewee's InsertQuery to retrieve the fields because it
     # takes care of peewee's internals (e.g. required default fields).
-    query = InsertQuery(cls, rows=[rows[0]])
+    query = InsertQuery(cls, rows=[list(rows)[0]])
     # Take the first row. We need to call _iter_rows() for peewee internals.
     # Using next() for a single item is not considered "pythonic".
     first_row = {}

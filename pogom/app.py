@@ -193,7 +193,7 @@ class Pogom(Flask):
     def get_active_devices(self):
         result = []
 
-        for uuid, dev in self.devices.iteritems():
+        for uuid, dev in self.devices.items():
             device = self.get_device(uuid, dev['latitude'], dev['longitude'])
             last_updated = device['last_updated']
             difference = (datetime.utcnow() - last_updated).total_seconds()
@@ -759,7 +759,7 @@ class Pogom(Flask):
                             last_scanned_times['pokemon'] = now_date
                             last_scanned_times['wild_pokemon'] = now_date
 
-                            encounter_ids = [long(p['encounterId']) for p in mapcell["wildPokemons"]]
+                            encounter_ids = [int(p['encounterId']) for p in mapcell["wildPokemons"]]
                             # For all the wild Pokemon we found check if an active Pokemon is in
                             # the database.
                             with Pokemon.database().execution_context():
@@ -773,7 +773,7 @@ class Pogom(Flask):
                                 # query.
                                 # All of that is needed to make sure it's unique.
                                 encountered_pokemon = [
-                                    (long(p['encounter_id']), p['spawnpoint_id']) for p in query]
+                                    (int(p['encounter_id']), p['spawnpoint_id']) for p in query]
 
                             for p in mapcell["wildPokemons"]:
                                 spawn_id = p['spawnPointId']
@@ -784,7 +784,7 @@ class Pogom(Flask):
                                 sp['missed_count'] = 0
 
                                 sighting = {
-                                    'encounter_id': long(p['encounterId']),
+                                    'encounter_id': int(p['encounterId']),
                                     'spawnpoint_id': spawn_id,
                                     'scan_time': now_date,
                                     'tth_secs': None
@@ -827,11 +827,11 @@ class Pogom(Flask):
                                 if (not SpawnPoint.tth_found(sp) or sighting['tth_secs']):
                                     SpawnpointDetectionData.classify(sp, scan_location, now_secs,
                                                                      sighting)
-                                    sightings[long(p['encounterId'])] = sighting
+                                    sightings[int(p['encounterId'])] = sighting
 
                                 sp['last_scanned'] = datetime.utcnow()
 
-                                if ((long(p['encounterId']), spawn_id) in encountered_pokemon) or (long(p['encounterId']) in pokemon):
+                                if ((int(p['encounterId']), spawn_id) in encountered_pokemon) or (int(p['encounterId']) in pokemon):
                                     # If Pokemon has been encountered before don't process it.
                                     pokemon_skipped += 1
                                     continue
@@ -850,8 +850,8 @@ class Pogom(Flask):
                                 printPokemon(pokemon_id, p['latitude'], p['longitude'],
                                              disappear_time)
 
-                                pokemon[long(p['encounterId'])] = {
-                                    'encounter_id': long(p['encounterId']),
+                                pokemon[int(p['encounterId'])] = {
+                                    'encounter_id': int(p['encounterId']),
                                     'spawnpoint_id': spawn_id,
                                     'pokemon_id': pokemon_id,
                                     'latitude': p['latitude'],
@@ -880,7 +880,7 @@ class Pogom(Flask):
                                     if (pokemon_id in args.webhook_whitelist or
                                         (not args.webhook_whitelist and pokemon_id
                                          not in args.webhook_blacklist)):
-                                        wh_poke = pokemon[long(p['encounterId'])].copy()
+                                        wh_poke = pokemon[int(p['encounterId'])].copy()
                                         wh_poke.update({
                                             'disappear_time': calendar.timegm(
                                                 disappear_time.timetuple()),
@@ -915,7 +915,7 @@ class Pogom(Flask):
                             last_scanned_times['pokemon'] = now_date
                             last_scanned_times['wild_pokemon'] = now_date
 
-                            encounter_ids = [long(p['encounterId']) for p in mapcell["catchablePokemons"]]
+                            encounter_ids = [int(p['encounterId']) for p in mapcell["catchablePokemons"]]
                             # For all the wild Pokemon we found check if an active Pokemon is in
                             # the database.
                             with Pokemon.database().execution_context():
@@ -929,7 +929,7 @@ class Pogom(Flask):
                                 # query.
                                 # All of that is needed to make sure it's unique.
                                 encountered_pokemon = [
-                                    (long(p['encounter_id']), p['spawnpoint_id']) for p in query]
+                                    (int(p['encounter_id']), p['spawnpoint_id']) for p in query]
 
                             for p in mapcell["catchablePokemons"]:
                                 spawn_id = p['spawnPointId']
@@ -940,7 +940,7 @@ class Pogom(Flask):
                                 sp['missed_count'] = 0
 
                                 sighting = {
-                                    'encounter_id': long(p['encounterId']),
+                                    'encounter_id': int(p['encounterId']),
                                     'spawnpoint_id': spawn_id,
                                     'scan_time': now_date,
                                     'tth_secs': None
@@ -984,11 +984,11 @@ class Pogom(Flask):
                                 if (not SpawnPoint.tth_found(sp) or sighting['tth_secs']):
                                     SpawnpointDetectionData.classify(sp, scan_location, now_secs,
                                                                      sighting)
-                                    sightings[long(p['encounterId'])] = sighting
+                                    sightings[int(p['encounterId'])] = sighting
 
                                 sp['last_scanned'] = datetime.utcnow()
 
-                                if ((long(p['encounterId']), spawn_id) in encountered_pokemon) or (long(p['encounterId']) in pokemon):
+                                if ((int(p['encounterId']), spawn_id) in encountered_pokemon) or (int(p['encounterId']) in pokemon):
                                     # If Pokemon has been encountered before don't process it.
                                     pokemon_skipped += 1
                                     continue
@@ -1007,8 +1007,8 @@ class Pogom(Flask):
                                 printPokemon(pokemon_id, p['latitude'], p['longitude'],
                                              disappear_time)
 
-                                pokemon[long(p['encounterId'])] = {
-                                    'encounter_id': long(p['encounterId']),
+                                pokemon[int(p['encounterId'])] = {
+                                    'encounter_id': int(p['encounterId']),
                                     'spawnpoint_id': spawn_id,
                                     'pokemon_id': pokemon_id,
                                     'latitude': p['latitude'],
@@ -1037,7 +1037,7 @@ class Pogom(Flask):
                                     if (pokemon_id in args.webhook_whitelist or
                                         (not args.webhook_whitelist and pokemon_id
                                          not in args.webhook_blacklist)):
-                                        wh_poke = pokemon[long(p['encounterId'])].copy()
+                                        wh_poke = pokemon[int(p['encounterId'])].copy()
                                         wh_poke.update({
                                             'disappear_time': calendar.timegm(
                                                 disappear_time.timetuple()),
@@ -1072,7 +1072,7 @@ class Pogom(Flask):
                             last_scanned_times['pokemon'] = now_date
                             last_scanned_times['nearby_pokemon'] = now_date
 
-                            nearby_encounter_ids = [long(p['encounterId']) for p in mapcell["nearbyPokemons"]]
+                            nearby_encounter_ids = [int(p['encounterId']) for p in mapcell["nearbyPokemons"]]
                             # For all the wild Pokemon we found check if an active Pokemon is in
                             # the database.
                             with PokestopMember.database().execution_context():
@@ -1086,7 +1086,7 @@ class Pogom(Flask):
                                 # query.
                                 # All of that is needed to make sure it's unique.
                                 nearby_encountered_pokemon = [
-                                    (long(p['encounter_id']), p['pokestop_id']) for p in query]
+                                    (int(p['encounter_id']), p['pokestop_id']) for p in query]
 
                             for p in mapcell["nearbyPokemons"]:
                                 pokestop_id = p.get('fortId')
@@ -1110,8 +1110,8 @@ class Pogom(Flask):
                                 form = _FORM.values_by_name[p["pokemonDisplay"].get('form', 'FORM_UNSET')].number
                                 weather_boosted_condition = _WEATHERCONDITION.values_by_name[p["pokemonDisplay"].get('weatherBoostedCondition', 'NONE')].number
 
-                                nearby_pokemons[long(encounter_id)] = {
-                                    'encounter_id': long(encounter_id),
+                                nearby_pokemons[int(encounter_id)] = {
+                                    'encounter_id': int(encounter_id),
                                     'pokestop_id': p['fortId'],
                                     'pokemon_id': pokemon_id,
                                     'disappear_time': disappear_time,
@@ -1121,10 +1121,10 @@ class Pogom(Flask):
                                     'weather_boosted_condition': weather_boosted_condition,
                                     'distance': distance
                                 }
-                                if nearby_pokemons[long(encounter_id)]['costume'] < -1:
-                                    nearby_pokemons[long(encounter_id)]['costume'] = -1
-                                if nearby_pokemons[long(encounter_id)]['form'] < -1:
-                                    nearby_pokemons[long(encounter_id)]['form'] = -1
+                                if nearby_pokemons[int(encounter_id)]['costume'] < -1:
+                                    nearby_pokemons[int(encounter_id)]['costume'] = -1
+                                if nearby_pokemons[int(encounter_id)]['form'] < -1:
+                                    nearby_pokemons[int(encounter_id)]['form'] = -1
 
                                 pokestopdetails = pokestop_details.get(p['fortId'], Pokestop.get_pokestop_details(p['fortId']))
                                 pokestop_url = p.get('fortImageUrl', "").replace('http://', 'https://')
@@ -1158,11 +1158,11 @@ class Pogom(Flask):
 
                                     activeFortModifier = fort.get('activeFortModifier', [])
                                     if 'ITEM_TROY_DISK' in activeFortModifier:
-                                        lure_expiration = datetime.utcfromtimestamp(long(fort['lastModifiedTimestampMs']) / 1000) + timedelta(minutes=args.lure_duration)
+                                        lure_expiration = datetime.utcfromtimestamp(int(fort['lastModifiedTimestampMs']) / 1000) + timedelta(minutes=args.lure_duration)
                                         lureInfo = fort.get('lureInfo')
                                         if lureInfo is not None:
                                             active_pokemon_id = _POKEMONID.values_by_name[lureInfo.get('activePokemonId', 'MISSINGNO')].number,
-                                            active_pokemon_expiration = datetime.utcfromtimestamp(long(lureInfo.get('lureExpiresTimestampMs')) / 1000)
+                                            active_pokemon_expiration = datetime.utcfromtimestamp(int(lureInfo.get('lureExpiresTimestampMs')) / 1000)
                                         else:
                                             active_pokemon_id = None
                                             active_pokemon_expiration = None
@@ -1414,7 +1414,7 @@ class Pogom(Flask):
                         gameplay_weather = cw.get("gameplayWeather")
                         weather_alerts = cw.get("alerts")
 
-                        s2s_cell_id = s2sphere.CellId(long(s2_cell_id))
+                        s2s_cell_id = s2sphere.CellId(int(s2_cell_id))
                         s2s_cell = s2sphere.Cell(s2s_cell_id)
                         s2s_center = s2sphere.LatLng.from_point(s2s_cell.get_center())
                         s2s_lat = s2s_center.lat().degrees
@@ -1881,7 +1881,7 @@ class Pogom(Flask):
                     sp['missed_count'] = 0
 
                     sighting = {
-                        'encounter_id': long(wildpokemon['encounterId']),
+                        'encounter_id': int(wildpokemon['encounterId']),
                         'spawnpoint_id': spawn_id,
                         'scan_time': now_date,
                         'tth_secs': None
@@ -1892,9 +1892,9 @@ class Pogom(Flask):
 
                     # time_till_hidden_ms was overflowing causing a negative integer.
                     # It was also returning a value above 3.6M ms.
-                    if 0 < long(wildpokemon.get('timeTillHiddenMs', -1)) < 3600000:
+                    if 0 < int(wildpokemon.get('timeTillHiddenMs', -1)) < 3600000:
                         d_t_secs = date_secs(datetime.utcfromtimestamp(
-                            now() + long(wildpokemon['timeTillHiddenMs']) / 1000.0))
+                            now() + int(wildpokemon['timeTillHiddenMs']) / 1000.0))
 
                         # Cover all bases, make sure we're using values < 3600.
                         # Warning: python uses modulo as the least residue, not as
@@ -1923,7 +1923,7 @@ class Pogom(Flask):
                     if (not SpawnPoint.tth_found(sp) or sighting['tth_secs']):
                         SpawnpointDetectionData.classify(sp, scan_location, now_secs,
                                                          sighting)
-                        sightings[long(wildpokemon['encounterId'])] = sighting
+                        sightings[int(wildpokemon['encounterId'])] = sighting
 
                     sp['last_scanned'] = datetime.utcnow()
 
@@ -1941,8 +1941,8 @@ class Pogom(Flask):
                     printPokemon(pokemon_id, wildpokemon['latitude'], wildpokemon['longitude'],
                                  disappear_time)
 
-                    pokemon[long(wildpokemon['encounterId'])] = {
-                        'encounter_id': long(wildpokemon['encounterId']),
+                    pokemon[int(wildpokemon['encounterId'])] = {
+                        'encounter_id': int(wildpokemon['encounterId']),
                         'spawnpoint_id': spawn_id,
                         'pokemon_id': pokemon_id,
                         'latitude': wildpokemon['latitude'],
@@ -1977,7 +1977,7 @@ class Pogom(Flask):
                         if (pokemon_id in args.webhook_whitelist or
                             (not args.webhook_whitelist and pokemon_id
                              not in args.webhook_blacklist)):
-                            wh_poke = pokemon[long(wildpokemon['encounterId'])].copy()
+                            wh_poke = pokemon[int(wildpokemon['encounterId'])].copy()
                             wh_poke.update({
                                 'disappear_time': calendar.timegm(
                                     disappear_time.timetuple()),
@@ -2831,12 +2831,12 @@ class Pogom(Flask):
         speed = request_json.get('speed', args.speed)
         arrived_range = request_json.get('arrived_range', args.arrived_range)
 
-        if not isinstance(scheduletimeout, (int, long)):
+        if not isinstance(scheduletimeout, int):
             try:
                 scheduletimeout = int(scheduletimeout)
             except:
                 pass
-        if not isinstance(maxradius, (int, long)):
+        if not isinstance(maxradius, int):
             try:
                 maxradius = int(maxradius)
             except:
@@ -2846,7 +2846,7 @@ class Pogom(Flask):
                 stepsize = int(stepsize)
             except:
                 pass
-        if not isinstance(unknown_tth, (bool, int, long)):
+        if not isinstance(unknown_tth, (bool, int)):
             try:
                 if unknown_tth.lower() == 'true':
                     unknown_tth = True
@@ -2856,7 +2856,7 @@ class Pogom(Flask):
                     unknown_tth = int(unknown_tth)
             except:
                 pass
-        if not isinstance(maxpoints, (bool, int, long)):
+        if not isinstance(maxpoints, (bool, int)):
             try:
                 if maxpoints.lower() == 'true':
                     maxpoints = True
@@ -3018,7 +3018,7 @@ class Pogom(Flask):
         speed = request_json.get('speed', args.speed)
         arrived_range = request_json.get('arrived_range', args.arrived_range)
 
-        if not isinstance(scheduletimeout, (int, long)):
+        if not isinstance(scheduletimeout, int):
             try:
                 scheduletimeout = int(scheduletimeout)
             except:
@@ -3036,12 +3036,12 @@ class Pogom(Flask):
                     mapcontrolled = False
             except:
                 pass
-        if not isinstance(speed, (int, long)):
+        if not isinstance(speed, int):
             try:
                 speed = int(speed)
             except:
                 pass
-        if not isinstance(arrived_range, (int, long)):
+        if not isinstance(arrived_range, int):
             try:
                 arrived_range = int(arrived_range)
             except:
@@ -3177,12 +3177,12 @@ class Pogom(Flask):
         speed = request_json.get('speed', args.speed)
         arrived_range = request_json.get('arrived_range', args.arrived_range)
 
-        if not isinstance(scheduletimeout, (int, long)):
+        if not isinstance(scheduletimeout, int):
             try:
                 scheduletimeout = int(scheduletimeout)
             except:
                 pass
-        if not isinstance(maxradius, (int, long)):
+        if not isinstance(maxradius, int):
             try:
                 maxradius = int(maxradius)
             except:
@@ -3192,7 +3192,7 @@ class Pogom(Flask):
                 stepsize = int(stepsize)
             except:
                 pass
-        if not isinstance(questless, (bool, int, long)):
+        if not isinstance(questless, (bool, int)):
             try:
                 if questless.lower() == 'true':
                     questless = True
@@ -3202,7 +3202,7 @@ class Pogom(Flask):
                     questless = int(questless)
             except:
                 pass
-        if not isinstance(maxpoints, (bool, int, long)):
+        if not isinstance(maxpoints, (bool, int)):
             try:
                 if maxpoints.lower() == 'true':
                     maxpoints = True
@@ -3220,12 +3220,12 @@ class Pogom(Flask):
                     no_overlap = False
             except:
                 pass
-        if not isinstance(speed, (int, long)):
+        if not isinstance(speed, int):
             try:
                 speed = int(speed)
             except:
                 pass
-        if not isinstance(arrived_range, (int, long)):
+        if not isinstance(arrived_range, int):
             try:
                 arrived_range = int(arrived_range)
             except:
@@ -3361,27 +3361,27 @@ class Pogom(Flask):
         exraidonly = request_json.get('exraidonly', False)
         oldest_first = request_json.get('oldest_first', False)
 
-        if not isinstance(scheduletimeout, (int, long)):
+        if not isinstance(scheduletimeout, int):
             try:
                 scheduletimeout = int(scheduletimeout)
             except:
                 pass
-        if not isinstance(maxradius, (int, long)):
+        if not isinstance(maxradius, int):
             try:
                 maxradius = int(maxradius)
             except:
                 pass
-        if not isinstance(teleport_interval, (int, long)):
+        if not isinstance(teleport_interval, int):
             try:
                 teleport_interval = int(teleport_interval)
             except:
                 pass
-        if not isinstance(teleport_ignore, (int, long)):
+        if not isinstance(teleport_ignore, int):
             try:
                 teleport_ignore = int(teleport_ignore)
             except:
                 pass
-        if not isinstance(raidless, (bool, int, long)):
+        if not isinstance(raidless, (bool, int)):
             try:
                 if raidless.lower() == 'true':
                     raidless = True
@@ -3391,7 +3391,7 @@ class Pogom(Flask):
                     raidless = int(raidless)
             except:
                 pass
-        if not isinstance(maxpoints, (bool, int, long)):
+        if not isinstance(maxpoints, (bool, int)):
             try:
                 if maxpoints.lower() == 'true':
                     maxpoints = True
@@ -3568,12 +3568,12 @@ class Pogom(Flask):
         scheduletimeout = request_json.get('scheduletimeout', scheduletimeout)
         teleport_interval = request_json.get('teleport_interval', teleport_interval)
 
-        if not isinstance(scheduletimeout, (int, long)):
+        if not isinstance(scheduletimeout, int):
             try:
                 scheduletimeout = int(scheduletimeout)
             except:
                 pass
-        if not isinstance(teleport_interval, (int, long)):
+        if not isinstance(teleport_interval, int):
             try:
                 teleport_interval = int(teleport_interval)
             except:
