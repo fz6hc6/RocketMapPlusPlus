@@ -20,13 +20,13 @@ import requests
 from datetime import datetime
 from threading import Thread
 
-from .fakePogoApi import FakePogoApi
+from pogom.fakePogoApi import FakePogoApi
 
-from .models import Token
-from .transform import jitter_location
-from .account import check_login
-from .proxy import get_new_proxy
-from .utils import now
+from pogom.models import Token
+from pogom.transform import jitter_location
+from pogom.account import check_login
+from pogom.proxy import get_new_proxy
+from pogom.utils import now
 
 
 log = logging.getLogger(__name__)

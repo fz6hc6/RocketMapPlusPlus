@@ -26,21 +26,21 @@ import geopy
 from collections import OrderedDict
 from flask import json
 
-from .utils import (get_pokemon_name, get_pokemon_types,
+from pogom.utils import (get_pokemon_name, get_pokemon_types,
                     get_args, cellid, in_radius, date_secs, clock_between,
                     get_move_name, get_move_damage, get_move_energy,
                     get_move_type, calc_pokemon_level, peewee_attr_to_col,
                     get_quest_icon, get_quest_quest_text, get_quest_reward_text,
                     get_timezone_offset, point_is_scheduled)
-from .transform import transform_from_wgs_to_gcj, get_new_coords
-from .customLog import printPokemon
+from pogom.transform import transform_from_wgs_to_gcj, get_new_coords
+from pogom.customLog import printPokemon
 
-from .account import check_login, setup_api, pokestop_spinnable, spin_pokestop
-from .proxy import get_new_proxy
-from .apiRequests import encounter
+from pogom.account import check_login, setup_api, pokestop_spinnable, spin_pokestop
+from pogom.proxy import get_new_proxy
+from pogom.apiRequests import encounter
 
-from protos.pogoprotos.map.weather.gameplay_weather_pb2 import *
-from protos.pogoprotos.map.weather.weather_alert_pb2 import *
+from pogom.protos.pogoprotos.map.weather.gameplay_weather_pb2 import *
+from pogom.protos.pogoprotos.map.weather.weather_alert_pb2 import *
 
 log = logging.getLogger(__name__)
 

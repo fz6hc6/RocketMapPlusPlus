@@ -1,5 +1,5 @@
-from .utils import distance
-from .transform import intermediate_point
+from pogom.utils import distance
+from pogom.transform import intermediate_point
 
 
 class SpawnCluster(object):

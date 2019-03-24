@@ -14,7 +14,7 @@ from distutils.version import StrictVersion
 from threading import Thread, Event
 from queue import Queue
 from flask_cors import CORS
-from flask_cache_bust import init_cache_busting
+from pogom.flask_cache_bust import init_cache_busting
 
 from pogom.app import Pogom
 from pogom.utils import (get_args, now, log_resource_usage_loop, get_debug_dump_link,
@@ -268,7 +268,7 @@ def main():
     if not args.clear_db:
         app = Pogom(__name__,
                     root_path=os.path.dirname(
-                              os.path.abspath(__file__)).decode('utf8'),
+                              os.path.abspath(__file__)),
                     db_update_queue=db_updates_queue, wh_update_queue=wh_updates_queue)
         app.before_request(app.validate_request)
         app.set_current_location(position)

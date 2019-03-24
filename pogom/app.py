@@ -43,30 +43,30 @@ from werkzeug.datastructures import MultiDict
 import geopy
 
 from google.protobuf.json_format import MessageToJson
-from protos.pogoprotos.networking.responses.fort_search_response_pb2 import FortSearchResponse
-from protos.pogoprotos.networking.responses.encounter_response_pb2 import EncounterResponse
-from protos.pogoprotos.networking.responses.get_map_objects_response_pb2 import GetMapObjectsResponse, _GETMAPOBJECTSRESPONSE_TIMEOFDAY
-from protos.pogoprotos.networking.responses.gym_get_info_response_pb2 import GymGetInfoResponse
-from protos.pogoprotos.networking.responses.fort_details_response_pb2 import FortDetailsResponse
-from protos.pogoprotos.networking.responses.get_player_response_pb2 import GetPlayerResponse
-from protos.pogoprotos.map.weather.display_weather_pb2 import _DISPLAYWEATHER_DISPLAYLEVEL
-from protos.pogoprotos.map.weather.gameplay_weather_pb2 import _GAMEPLAYWEATHER_WEATHERCONDITION
-from protos.pogoprotos.map.weather.weather_alert_pb2 import _WEATHERALERT_SEVERITY
+from pogom.protos.pogoprotos.networking.responses.fort_search_response_pb2 import FortSearchResponse
+from pogom.protos.pogoprotos.networking.responses.encounter_response_pb2 import EncounterResponse
+from pogom.protos.pogoprotos.networking.responses.get_map_objects_response_pb2 import GetMapObjectsResponse, _GETMAPOBJECTSRESPONSE_TIMEOFDAY
+from pogom.protos.pogoprotos.networking.responses.gym_get_info_response_pb2 import GymGetInfoResponse
+from pogom.protos.pogoprotos.networking.responses.fort_details_response_pb2 import FortDetailsResponse
+from pogom.protos.pogoprotos.networking.responses.get_player_response_pb2 import GetPlayerResponse
+from pogom.protos.pogoprotos.map.weather.display_weather_pb2 import _DISPLAYWEATHER_DISPLAYLEVEL
+from pogom.protos.pogoprotos.map.weather.gameplay_weather_pb2 import _GAMEPLAYWEATHER_WEATHERCONDITION
+from pogom.protos.pogoprotos.map.weather.weather_alert_pb2 import _WEATHERALERT_SEVERITY
 
-from protos.pogoprotos.enums.team_color_pb2 import _TEAMCOLOR
-from protos.pogoprotos.enums.pokemon_id_pb2 import _POKEMONID
-from protos.pogoprotos.enums.pokemon_move_pb2 import _POKEMONMOVE
-from protos.pogoprotos.enums.raid_level_pb2 import _RAIDLEVEL
-from protos.pogoprotos.enums.gender_pb2 import _GENDER
-from protos.pogoprotos.enums.form_pb2 import _FORM
-from protos.pogoprotos.enums.costume_pb2 import _COSTUME
-from protos.pogoprotos.enums.weather_condition_pb2 import _WEATHERCONDITION
-from protos.pogoprotos.enums.quest_type_pb2 import _QUESTTYPE
-from protos.pogoprotos.data.quests.quest_reward_pb2 import _QUESTREWARD_TYPE
-from protos.pogoprotos.inventory.item.item_id_pb2 import _ITEMID
-from protos.pogoprotos.data.quests.quest_condition_pb2 import _QUESTCONDITION_CONDITIONTYPE
-from protos.pogoprotos.enums.pokemon_type_pb2 import _POKEMONTYPE
-from protos.pogoprotos.enums.activity_type_pb2 import _ACTIVITYTYPE
+from pogom.protos.pogoprotos.enums.team_color_pb2 import _TEAMCOLOR
+from pogom.protos.pogoprotos.enums.pokemon_id_pb2 import _POKEMONID
+from pogom.protos.pogoprotos.enums.pokemon_move_pb2 import _POKEMONMOVE
+from pogom.protos.pogoprotos.enums.raid_level_pb2 import _RAIDLEVEL
+from pogom.protos.pogoprotos.enums.gender_pb2 import _GENDER
+from pogom.protos.pogoprotos.enums.form_pb2 import _FORM
+from pogom.protos.pogoprotos.enums.costume_pb2 import _COSTUME
+from pogom.protos.pogoprotos.enums.weather_condition_pb2 import _WEATHERCONDITION
+from pogom.protos.pogoprotos.enums.quest_type_pb2 import _QUESTTYPE
+from pogom.protos.pogoprotos.data.quests.quest_reward_pb2 import _QUESTREWARD_TYPE
+from pogom.protos.pogoprotos.inventory.item.item_id_pb2 import _ITEMID
+from pogom.protos.pogoprotos.data.quests.quest_condition_pb2 import _QUESTCONDITION_CONDITIONTYPE
+from pogom.protos.pogoprotos.enums.pokemon_type_pb2 import _POKEMONTYPE
+from pogom.protos.pogoprotos.enums.activity_type_pb2 import _ACTIVITYTYPE
 
 log = logging.getLogger(__name__)
 compress = Compress()
@@ -2097,6 +2097,7 @@ class Pogom(Flask):
             session, request.headers.get('User-Agent'), ip_addr)
 
     def _ip_is_blacklisted(self, ip):
+        return False
         if not self.blacklist:
             return False
 
@@ -2337,7 +2338,9 @@ class Pogom(Flask):
             d['lastspawns'] = request.args.get('spawnpoints', 'false')
 
         # If old coords are not equal to current coords we have moved/zoomed!
-        if (oSwLng < swLng and oSwLat < swLat and
+        if (oSwLng == None or oSwLat == None or oNeLat == None or oNeLng == None):
+            newArea = True
+        elif (oSwLng < swLng and oSwLat < swLat and
                 oNeLat > neLat and oNeLng > neLng):
             newArea = False  # We zoomed in no new area uncovered.
         elif not (oSwLat == swLat and oSwLng == swLng and

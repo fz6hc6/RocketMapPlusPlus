@@ -9,7 +9,7 @@ from queue import Empty
 from cachetools import LFUCache
 from timeit import default_timer
 
-from .utils import get_async_requests_session
+from pogom.utils import get_async_requests_session
 
 log = logging.getLogger(__name__)
 

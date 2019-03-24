@@ -12,7 +12,7 @@ from timeit import default_timer
 from flask import abort, redirect
 from requests.exceptions import HTTPError
 
-from security import AESCipher
+from pogom.security import AESCipher
 
 log = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ import os
 import subprocess
 
 import logging
-from string import join
+#from string import join
 
 from pogom.utils import get_args
 

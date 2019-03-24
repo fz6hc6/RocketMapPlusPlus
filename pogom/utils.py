@@ -27,14 +27,10 @@ from time import strftime
 from timeit import default_timer
 from timezonefinder import TimezoneFinder
 
-from protos.pogoprotos.enums.pokemon_id_pb2 import _POKEMONID
+from pogom.protos.pogoprotos.enums.pokemon_id_pb2 import _POKEMONID
 
 log = logging.getLogger(__name__)
 tf = TimezoneFinder()
-
-def parse_unicode(bytestring):
-    decoded_string = bytestring.decode(sys.getfilesystemencoding())
-    return decoded_string
 
 
 def memoize(function):
@@ -66,7 +62,7 @@ def get_args():
                         is_config_file=True, help='Set configuration file')
     parser.add_argument('-scf', '--shared-config',
                         is_config_file=True, help='Set a shared config')
-    parser.add_argument('-l', '--location', type=parse_unicode,
+    parser.add_argument('-l', '--location',
                         help='Location, can be an address or coordinates.')
     # Default based on the average elevation of cities around the world.
     # Source: https://www.wikiwand.com/en/List_of_cities_by_elevation
