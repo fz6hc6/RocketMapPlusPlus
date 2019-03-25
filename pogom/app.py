@@ -187,6 +187,9 @@ class Pogom(Flask):
         self.devices_users = {}
         self.ga_alerts = {}
 
+        self.gym_details = {}
+        self.pokestop_details = {}
+
     def get_active_devices(self):
         result = []
 
@@ -1185,7 +1188,7 @@ class Pogom(Flask):
                                     if distance_m <= 1500:
                                         fortmaxdist = max(fortmaxdist, distance_m)
 
-                                    pokestopdetails = pokestop_details.get(fort['id'], Pokestop.get_pokestop_details(fort['id']))
+                                    pokestopdetails = self.pokestop_details.get(fort['id'], Pokestop.get_pokestop_details(fort['id']))
                                     pokestop_name = str(fort['latitude']) + ',' + str(fort['longitude'])
                                     pokestop_description = ""
                                     pokestop_url = fort.get('imageUrl', "").replace('http://', 'https://')
@@ -1195,6 +1198,12 @@ class Pogom(Flask):
                                         pokestop_url = pokestop_url if pokestop_url != "" else pokestopdetails["url"]
 
                                     pokestop_details[fort['id']] = {
+                                        'pokestop_id': fort['id'],
+                                        'name': pokestop_name,
+                                        'description': pokestop_description,
+                                        'url': pokestop_url
+                                    }
+                                    self.pokestop_details[fort['id']] = {
                                         'pokestop_id': fort['id'],
                                         'name': pokestop_name,
                                         'description': pokestop_description,
@@ -1260,7 +1269,7 @@ class Pogom(Flask):
 
                                     gym_id = fort['id']
 
-                                    gymdetails = gym_details.get(gym_id, Gym.get_gym_details(gym_id))
+                                    gymdetails = self.gym_details.get(gym_id, Gym.get_gym_details(gym_id))
                                     gym_name = str(fort['latitude']) + ',' + str(fort['longitude'])
                                     gym_description = ""
                                     gym_url = fort.get('imageUrl', "").replace('http://', 'https://')
@@ -1270,6 +1279,12 @@ class Pogom(Flask):
                                         gym_url = gym_url if gym_url != "" else gymdetails["url"]
 
                                     gym_details[gym_id] = {
+                                        'gym_id': gym_id,
+                                        'name': gym_name,
+                                        'description': gym_description,
+                                        'url': gym_url
+                                    }
+                                    self.gym_details[gym_id] = {
                                         'gym_id': gym_id,
                                         'name': gym_name,
                                         'description': gym_description,
@@ -1513,12 +1528,18 @@ class Pogom(Flask):
 
                 gym_encountered[gym_id] = gyms[gym_id].copy()
 
-                gymdetails = gym_details.get(gym_id, Gym.get_gym_details(gym_id))
+                gymdetails = self.gym_details.get(gym_id, Gym.get_gym_details(gym_id))
                 gym_name = gym_get_info_response_json["name"]
                 gym_description = gym_get_info_response_json.get("description", "")
                 gym_url = gym_get_info_response_json.get("url", "").replace('http://', 'https://')
 
                 gym_details[gym_id] = {
+                    'gym_id': gym_id,
+                    'name': gym_name,
+                    'description': gym_description,
+                    'url': gym_url
+                }
+                self.gym_details[gym_id] = {
                     'gym_id': gym_id,
                     'name': gym_name,
                     'description': gym_description,
@@ -1637,6 +1658,12 @@ class Pogom(Flask):
                     fort_imageurl = fort_imageurls[0].replace('http://', 'https://') if len(fort_imageurls) else ""
 
                     pokestop_details[fort_id] = {
+                        'pokestop_id': fort_id,
+                        'name': fort_name,
+                        'description': fort_description,
+                        'url': fort_imageurl
+                    }
+                    self.pokestop_details[fort_id] = {
                         'pokestop_id': fort_id,
                         'name': fort_name,
                         'description': fort_description,
