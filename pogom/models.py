@@ -3561,6 +3561,14 @@ def db_clean_pokemons(age_hours):
 
     pokemon_timeout = datetime.utcnow() - timedelta(hours=age_hours)
 
+    with PokestopMember.database().execution_context():
+        query = (PokestopMember
+             .delete()
+             .where(PokestopMember.disappear_time < pokemon_timeout))
+        rows = query.execute()
+        log.debug('Deleted %d old PokestopMember entries.', rows)
+
+
     with Pokemon.database().execution_context():
         query = (Pokemon
                  .delete()
