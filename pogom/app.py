@@ -2053,7 +2053,7 @@ class Pogom(Flask):
         if gym_encountered:
             with GymMember.database().execution_context():
                 DeleteQuery(GymMember).where(
-                    GymMember.gym_id << list(gym_encountered.keys()).execute())
+                    GymMember.gym_id << list(gym_encountered.keys())).execute()
 
         if gym_members:
             self.db_update_queue.put((GymMember, gym_members))

@@ -211,6 +211,12 @@ def main():
 
     set_log_and_verbosity(log)
 
+    if (sys.version_info.major == 3):
+        log.info("Running under Python3")
+    else:
+        log.warning("Running under Python2")
+        sys.exit(1)
+
     global db_updates_queue
     global wh_updates_queue
 
