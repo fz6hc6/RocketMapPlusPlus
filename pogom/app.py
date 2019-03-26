@@ -1140,6 +1140,46 @@ class Pogom(Flask):
                                         'url': pokestop_url
                                     }
 
+                                if 'nearby-pokemon' in args.wh_types:
+                                    if (pokemon_id in args.webhook_whitelist or
+                                        (not args.webhook_whitelist and pokemon_id
+                                         not in args.webhook_blacklist)):
+                                        stop = Pokestop.get_stop(p['fortId'])
+                                        wh_poke = nearby_pokemons[long(encounter_id)].copy()
+                                        wh_poke.update({
+                                            'encounter_id': str(p['fortId']) + '|' + str(p['encounterId']),
+                                            'spawnpoint_id': 0,
+                                            'disappear_time': calendar.timegm(
+                                                disappear_time.timetuple()),
+                                            'latitude': stop['latitude'],
+                                            'longitude': stop['longitude'],
+                                            'last_modified_time': now(),
+                                            'time_until_hidden_ms': 0,
+                                            'verified': False,
+                                            'seconds_until_despawn': 0,
+                                            'spawn_start': 0,
+                                            'spawn_end': 0,
+                                            'player_level': int(trainerlvl),
+                                            'individual_attack': 0,
+                                            'individual_defense': 0,
+                                            'individual_stamina': 0,
+                                            'move_1': 0,
+                                            'move_2': 0,
+                                            'cp': 0,
+                                            'cp_multiplier': 0,
+                                            'height': 0,
+                                            'weight': 0,
+                                            'weather_id': weather_boosted_condition,
+                                            'expire_timestamp_verified': False
+                                        })
+
+                                        rarity = self.get_pokemon_rarity_code(pokemon_id)
+                                        wh_poke.update({
+                                            'rarity': rarity
+                                        })
+
+                                        self.wh_update_queue.put(('pokemon', wh_poke))
+
                         if "forts" in mapcell:
                             last_scanned_times['forts'] = now_date
 
