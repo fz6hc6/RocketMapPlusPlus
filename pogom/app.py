@@ -218,6 +218,7 @@ class Pogom(Flask):
             self.devices[uuid]['route'] = ''
             self.devices[uuid]['no_overlap'] = False
             self.devices[uuid]['mapcontrolled'] = False
+            self.devices[uuid]['requestedEndpoint'] = ""
         device = self.devices[uuid].copy()
 
         last_updated = device['last_updated']
@@ -3490,8 +3491,6 @@ class Pogom(Flask):
             if not self.geofences:
                 from .geofence import Geofences
                 self.geofences = Geofences()
-
-            log.warning("Geofences: ".format(geofence))
 
             self.deviceschedules[uuid] = Gym.get_nearby_gyms(latitude, longitude, maxradius, teleport_ignore, raidless, maxpoints, geofence, scheduled_points, self.geofences, exraidonly, oldest_first)
             if raidless and len(self.deviceschedules[uuid]) == 0:

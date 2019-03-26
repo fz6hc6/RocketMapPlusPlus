@@ -14,7 +14,7 @@ from distutils.version import StrictVersion
 from threading import Thread, Event
 from queue import Queue
 from flask_cors import CORS
-from pogom.flask_cache_bust import init_cache_busting
+import pogom.flask_cache_bust
 
 from pogom.app import Pogom
 from pogom.utils import (get_args, now, log_resource_usage_loop, get_debug_dump_link,
@@ -351,7 +351,7 @@ def main():
         CORS(app)
 
     # No more stale JS.
-    init_cache_busting(app)
+    pogom.flask_cache_bust.init_cache_busting(app)
 
     app.set_control_flags(control_flags)
     app.set_heartbeat_control(heartbeat)

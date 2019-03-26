@@ -3815,8 +3815,8 @@ def bulk_upsert(cls, data, db):
 
     # Assign fields, placeholders and assignments after defaults
     # so our lists/keys stay in order.
-    table = '`'+(conn.escape_string(cls._meta.db_table)).decode()+'`'
-    escaped_fields = ['`'+(conn.escape_string(f)).decode()+'`' for f in db_columns]
+    table = '`'+(conn.escape_string(cls._meta.db_table))+'`'
+    escaped_fields = ['`'+(conn.escape_string(f))+'`' for f in db_columns]
     placeholders = ['%s' for escaped_field in escaped_fields]
     assignments = ['{x} = VALUES({x})'.format(
         x=escaped_field
