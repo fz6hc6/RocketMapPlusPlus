@@ -2052,7 +2052,7 @@ class Pogom(Flask):
         if gym_encountered:
             with GymMember.database().execution_context():
                 DeleteQuery(GymMember).where(
-                    GymMember.gym_id << gym_encountered.keys()).execute()
+                    GymMember.gym_id << list(gym_encountered.keys()).execute())
 
         if gym_members:
             self.db_update_queue.put((GymMember, gym_members))
@@ -2097,12 +2097,11 @@ class Pogom(Flask):
             session, request.headers.get('User-Agent'), ip_addr)
 
     def _ip_is_blacklisted(self, ip):
-        return False
         if not self.blacklist:
             return False
 
         # Get the nearest IP range
-        pos = max(bisect_left(self.blacklist_keys, ip) - 1, 0)
+        pos = max(bisect_left(self.blacklist_keys, int(dottedQuadToNum(ip))) - 1, 0)
         ip_range = self.blacklist[pos]
 
         start = dottedQuadToNum(ip_range[0])
@@ -2882,12 +2881,12 @@ class Pogom(Flask):
                     mapcontrolled = False
             except:
                 pass
-        if not isinstance(speed, (int, long)):
+        if not isinstance(speed, (int)):
             try:
                 speed = int(speed)
             except:
                 pass
-        if not isinstance(arrived_range, (int, long)):
+        if not isinstance(arrived_range, (int)):
             try:
                 arrived_range = int(arrived_range)
             except:
