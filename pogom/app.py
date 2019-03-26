@@ -609,6 +609,8 @@ class Pogom(Flask):
 
         result = ""
         for gym_id, gym in d['gyms'].items():
+            if gym['name'] is None:
+                gym['name'] = 'Unknown Name'
             if unknown_name:
                 coords_found = re.search('^.*\..*,.*\..*$', gym['name'])
                 if coords_found is None:
