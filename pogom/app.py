@@ -626,7 +626,7 @@ class Pogom(Flask):
                     result += ",Active Raid:"
                     if gym['raid']['pokemon_id']:
                         result += " " + gym['raid']['pokemon_name']
-                    result += " Level: " + gym['raid']['level']
+                    result += " Level: " + str(gym['raid']['level'])
                     if start > 0:
                         result += " Starting in " + str(start) + " m"
                     else:
