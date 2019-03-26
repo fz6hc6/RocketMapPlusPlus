@@ -1,7 +1,7 @@
 
 # RocketMap
 
-![Python 2.7](https://img.shields.io/badge/python-2.7-blue.svg) ![License](https://img.shields.io/github/license/RocketMap/RocketMap.svg) 
+![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg) ![License](https://img.shields.io/github/license/RocketMap/RocketMap.svg) 
 
 Live visualization of all the Pokémon (with option to show gyms, raids and PokéStops) in your area. This is a proof of concept that we can load all the Pokémon visible nearby given a location. Currently runs on a Flask server displaying Google Maps with markers on it. The data for these maps should come from the 'host your own map' functionality of [Pokemon Go ++](https://www.globalplusplus.com).
 
@@ -16,56 +16,63 @@ Live visualization of all the Pokémon (with option to show gyms, raids and Pok�
 
 ## Installation
 
-### Downloading the Application
+### Requirements
+Install the following:
 
-To run a copy from the latest develop branch in git you can clone the repository:
-`git clone --recursive https://github.com/GlobalPlusPlus/RocketMapPlusPlus.git`
+* python3
+* python3-pip
+* python-venv
+* git
+* npm
+* mysql-client (nice to have)
+* mysql-server (local or remote)
 
-### Installing Modules
-
-At this point you should have the following:
+Verify version using:
 ```
-Python 2.7
-pip
-RocketMapPlusPlus application folder
-```
-
-First, open up your shell (cmd.exe/terminal.app) and change to the directory of RocketMapPlusPlus.
-
-You can verify your installation like this:
-```
-python --version
-pip --version
-```
-The output should look something like:
-```
-$ python --version
-Python 2.7.12
-$ pip --version
-pip 8.1.2 from /usr/local/lib/python2.7/site-packages (python 2.7)
-```
-Now you can install all the Python dependencies, make sure you’re still in the directory of RocketMapPlusPlus:
-
-Windows:
-`pip install -r requirements.txt`
-Linux/OSX:
-`sudo -H pip install -r requirements.txt`
-
-### Building Front-End Assets
-
-In order to run from a git clone, you must compile the front-end assets with node. Make sure you have node installed for your platform.
-Once node/npm is installed, open a command window and validation your install:
-```
+python3 --version
+pip3 --version
 node --version
 npm --version
 ```
 The output should look something like:
 ```
+$ python3 --version
+Python 3.6.7
+$ pip3 --version
+pip 9.0.1 from /home/pogo/python3-test/lib/python3.6/site-packages (python 3.6)
 $ node --version
-v4.7.0
+v8.10.0
 $ npm --version
-3.8.9
+3.5.2
 ```
+### Downloading the Application
+
+To run a copy from the latest develop branch in git you can clone the repository:
+`git clone --recursive https://github.com/GlobalPlusPlus/RocketMapPlusPlus.git -b Python3 --single-branch`
+
+Now you can install all the Python dependencies, make sure you’re still in the directory of RocketMapPlusPlus:
+
+### Starting the Virtual Python Environment (File separation)
+Create a virtual environment and activate it
+
+```
+python3.6 -m venv <folder>
+```
+
+To leave the environment please run
+
+```
+deactivate
+```
+
+### Building Back-end and Front-End Assets
+Now install the required pip packages (Python Installer Packages)
+
+Windows:
+`pip install -r requirements3.txt`
+Linux/OSX:
+`pip install -r requirements3.txt`
+
 Once node/npm is installed, you can install the node dependencies and build the front-end assets:
 `npm install`
 
@@ -75,14 +82,26 @@ The assets should automatically build (you'd see something about "grunt build"),
 ### Basic Launching
 
 Once those have run, you should be able to start using the application, make sure you’re in the directory of RocketMapPlusPlus then:
-`python ./runserver.py --help`
+`python3 ./runserver.py --help`
 Read through the available options and set all the required CLI flags to start your own server. At a minimum you will need to provide a location, and a google maps key.
 
 The most basic config you could use would look something like this:
-`python ./runserver.py -l "a street address or lat/lng coords here" -k "MAPS_KEY_HERE"`
+`python3 ./runserver.py -l "a street address or lat/lng coords here" -k "MAPS_KEY_HERE"`
 Let’s run through this startup command to make sure you understand what flags are being set.
 
 Once your setup is running, open your browser to http://localhost:5000 and your pokemon will begin to show up! Happy hunting!
+
+### TL;DR;
+sudo apt-get install python python3-pip python3-venv git npm
+export FOLDER=RocketmapPlusPlus
+git clone --recursive https://github.com/virot/RocketMapPlusPlus.git -b Python3 --single-branch $FOLDER
+python3.6 -m venv $FOLDER
+source $FOLDER/bin/activate
+cd $FOLDER
+pip install -r requirements3.txt
+npm install && npm run build
+python runserver.py -cf <configuration file>
+deactivate
 
 ### Sample config.ini example
 

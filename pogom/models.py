@@ -2031,7 +2031,7 @@ class SpawnPoint(LatLongModel):
 
             result = []
             while len(orderedspawnpoints) > 0:
-                value = orderedspawnpoints.items()[0][1]
+                value = list(orderedspawnpoints.items())[0][1]
                 result.append((value['latitude'], value['longitude'], value['key']))
                 newlat = value['latitude']
                 newlong = value['longitude']
