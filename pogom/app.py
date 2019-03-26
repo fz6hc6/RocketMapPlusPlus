@@ -608,7 +608,7 @@ class Pogom(Flask):
                 d['gyms'] = self.geofences.get_geofenced_results(d['gyms'], geofencenames)
 
         result = ""
-        for gym in d['gyms']:
+        for gym_id, gym in d['gyms'].items():
             if unknown_name:
                 coords_found = re.search('^.*\..*,.*\..*$', gym['name'])
                 if coords_found is None:
