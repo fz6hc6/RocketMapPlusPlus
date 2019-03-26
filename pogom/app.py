@@ -171,6 +171,7 @@ class Pogom(Flask):
         self.route("/serviceWorker.min.js", methods=['GET'])(
             self.render_service_worker_js)
         self.route("/feedpokemon", methods=['GET'])(self.feedpokemon)
+        self.route("/feedgym", methods=['GET'])(self.feedgym)
         self.route("/feedquest", methods=['GET'])(self.feedquest)
         self.route("/gym_img", methods=['GET'])(self.gym_img)
 
@@ -520,6 +521,108 @@ class Pogom(Flask):
             now_date = datetime.utcnow()
             ttl = int(round((pokemon['disappear_time'] - now_date).total_seconds() / 60))
             result += ", " + str(ttl) + "m"
+
+        return result.strip()
+
+    def feedgym(self):
+        self.heartbeat[0] = now()
+        args = get_args()
+        if args.on_demand_timeout > 0:
+            self.control_flags['on_demand'].clear()
+        d = {}
+
+        # Request time of this request.
+        d['timestamp'] = datetime.utcnow()
+
+        # Request time of previous request.
+        if request.args.get('timestamp'):
+            timestamp = int(request.args.get('timestamp'))
+            timestamp -= 1000  # Overlap, for rounding errors.
+        else:
+            timestamp = 0
+
+        swLat = request.args.get('swLat')
+        swLng = request.args.get('swLng')
+        neLat = request.args.get('neLat')
+        neLng = request.args.get('neLng')
+
+        oSwLat = request.args.get('oSwLat')
+        oSwLng = request.args.get('oSwLng')
+        oNeLat = request.args.get('oNeLat')
+        oNeLng = request.args.get('oNeLng')
+
+        # Previous switch settings.
+        lastgyms = request.args.get('lastgyms')
+
+        geofencenames = request.args.get('geofencenames', '')
+
+        if request.args.get('unknown_name', 'false') == 'true':
+            unknown_name = True
+        else:
+            unknown_name = False
+
+        # Current switch settings saved for next request.
+        if request.args.get('gyms', 'true') == 'true':
+            d['lastgyms'] = request.args.get('gyms', 'true')
+
+        # If old coords are not equal to current coords we have moved/zoomed!
+        if (oSwLng < swLng and oSwLat < swLat and
+                oNeLat > neLat and oNeLng > neLng):
+            newArea = False  # We zoomed in no new area uncovered.
+        elif not (oSwLat == swLat and oSwLng == swLng and
+                  oNeLat == neLat and oNeLng == neLng):
+            newArea = True
+        else:
+            newArea = False
+
+        # Pass current coords as old coords.
+        d['oSwLat'] = swLat
+        d['oSwLng'] = swLng
+        d['oNeLat'] = neLat
+        d['oNeLng'] = neLng
+
+        if not self.geofences:
+            from .geofence import Geofences
+            self.geofences = Geofences()
+
+        if request.args.get('gyms', 'true') == 'true' and not args.no_gyms:
+            if lastgyms != 'true':
+                d['gyms'] = Gym.get_gyms(swLat, swLng, neLat, neLng)
+            else:
+                d['gyms'] = Gym.get_gyms(swLat, swLng, neLat, neLng,
+                                         timestamp=timestamp)
+                if newArea:
+                    d['gyms'].update(
+                        Gym.get_gyms(swLat, swLng, neLat, neLng,
+                                     oSwLat=oSwLat, oSwLng=oSwLng,
+                                     oNeLat=oNeLat, oNeLng=oNeLng))
+            if len(d['gyms']) > 0 and (not args.data_outside_geofences or geofencenames != "") and self.geofences.is_enabled():
+                d['gyms'] = self.geofences.get_geofenced_results(d['gyms'], geofencenames)
+
+        result = ""
+        for gym_id, gym in d['gyms'].items():
+            if gym['name'] is None:
+                gym['name'] = 'Unknown Name'
+            if unknown_name:
+                coords_found = re.search('^.*\..*,.*\..*$', gym['name'])
+                if coords_found is None and gym['name'] != 'Unknown Name':
+                    continue
+            if result != "":
+                result += "\n"
+            result += str(round(gym['latitude'], 5)) + "," + str(round(gym['longitude'], 5)) + "," + str(gym['guard_pokemon_id']) + "," + gym['name']
+            if gym['raid'] is not None:
+                now_date = datetime.utcnow()
+                start = int(round((gym['raid']['start'] - now_date).total_seconds() / 60))
+                end = int(round((gym['raid']['end'] - now_date).total_seconds() / 60))
+                if end > 0:
+                    result += ",Active Raid:"
+                    if gym['raid']['pokemon_id']:
+                        result += " " + gym['raid']['pokemon_name']
+                    result += " Level: " + str(gym['raid']['level'])
+                    if start > 0:
+                        result += " Starting in " + str(start) + " m"
+                    else:
+                        result += " Ending in " + str(end) + " m"
 
         return result.strip()
 
@@ -1140,6 +1243,46 @@ class Pogom(Flask):
                                         'description': pokestop_description,
                                         'url': pokestop_url
                                     }
+
+                                if 'nearby-pokemon' in args.wh_types:
+                                    if (pokemon_id in args.webhook_whitelist or
+                                        (not args.webhook_whitelist and pokemon_id
+                                         not in args.webhook_blacklist)):
+                                        stop = Pokestop.get_stop(p['fortId'])
+                                        wh_poke = nearby_pokemons[long(encounter_id)].copy()
+                                        wh_poke.update({
+                                            'encounter_id': str(p['fortId']) + '|' + str(p['encounterId']),
+                                            'spawnpoint_id': 0,
+                                            'disappear_time': calendar.timegm(
+                                                disappear_time.timetuple()),
+                                            'latitude': stop['latitude'],
+                                            'longitude': stop['longitude'],
+                                            'last_modified_time': now(),
+                                            'time_until_hidden_ms': 0,
+                                            'verified': False,
+                                            'seconds_until_despawn': 0,
+                                            'spawn_start': 0,
+                                            'spawn_end': 0,
+                                            'player_level': int(trainerlvl),
+                                            'individual_attack': 0,
+                                            'individual_defense': 0,
+                                            'individual_stamina': 0,
+                                            'move_1': 0,
+                                            'move_2': 0,
+                                            'cp': 0,
+                                            'cp_multiplier': 0,
+                                            'height': 0,
+                                            'weight': 0,
+                                            'weather_id': weather_boosted_condition,
+                                            'expire_timestamp_verified': False
+                                        })
+
+                                        rarity = self.get_pokemon_rarity_code(pokemon_id)
+                                        wh_poke.update({
+                                            'rarity': rarity
+                                        })
+
+                                        self.wh_update_queue.put(('pokemon', wh_poke))
 
                         if "forts" in mapcell:
                             last_scanned_times['forts'] = now_date

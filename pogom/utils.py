@@ -392,7 +392,7 @@ def get_args():
         choices=[
             'pokemon', 'gym', 'raid', 'egg', 'tth', 'gym-info',
             'pokestop', 'lure', 'captcha', 'quest', 'pokemon-iv',
-            'devices'
+            'devices', 'nearby-pokemon'
         ],
         action='append',
         default=[])
