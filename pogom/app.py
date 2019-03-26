@@ -524,15 +524,6 @@ class Pogom(Flask):
         return result.strip()
 
     def feedgym(self):
-        fingerprint_blacklisted = any([
-            fingerprints['no_referrer'](request),
-            fingerprints['iPokeGo'](request)
-        ])
-
-        if fingerprint_blacklisted:
-            log.debug('User denied access: blacklisted fingerprint.')
-            abort(403)
-
         self.heartbeat[0] = now()
         args = get_args()
         if args.on_demand_timeout > 0:
