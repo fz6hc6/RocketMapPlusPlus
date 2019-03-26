@@ -564,7 +564,7 @@ class Pogom(Flask):
 
         geofencenames = request.args.get('geofencenames', '')
 
-        if request.args.get('unknown_name', 'true') == 'true':
+        if request.args.get('unknown_name', 'false') == 'true':
             unknown_name = True
         else:
             unknown_name = False
@@ -613,7 +613,7 @@ class Pogom(Flask):
                 gym['name'] = 'Unknown Name'
             if unknown_name:
                 coords_found = re.search('^.*\..*,.*\..*$', gym['name'])
-                if coords_found is None:
+                if coords_found is None and gym['name'] != 'Unknown Name':
                     continue
             if result != "":
                 result += "\n"
