@@ -40,15 +40,15 @@ from requests.packages.urllib3.util.retry import Retry
 from distutils.version import StrictVersion
 from cachetools import TTLCache
 
-from .models import (parse_map, GymDetails, parse_gyms, MainWorker,
+from pogom.models import (parse_map, GymDetails, parse_gyms, MainWorker,
                      WorkerStatus, HashKeys, ScannedLocation)
-from .utils import now, distance
-from .transform import get_new_coords
-from .account import setup_api, check_login, AccountSet
-from .captcha import captcha_overseer_thread, handle_captcha
-from .proxy import get_new_proxy
-from .apiRequests import gym_get_info, get_map_objects as gmo
-from .transform import jitter_location
+from pogom.utils import now, distance
+from pogom.transform import get_new_coords
+from pogom.account import setup_api, check_login, AccountSet
+from pogom.captcha import captcha_overseer_thread, handle_captcha
+from pogom.proxy import get_new_proxy
+from pogom.apiRequests import gym_get_info, get_map_objects as gmo
+from pogom.transform import jitter_location
 
 log = logging.getLogger(__name__)
 

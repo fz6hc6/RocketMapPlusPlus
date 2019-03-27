@@ -1,8 +1,8 @@
 import logging
 import math
 from overpy import Overpass
-from geofence import Geofences
-from models import Gym, init_database
+from pogom.geofence import Geofences
+from pogom.models import Gym, init_database
 from s2sphere import LatLng, CellId
 
 # Specify app for a database connection and log to show module name in logs.

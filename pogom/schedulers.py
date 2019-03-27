@@ -60,13 +60,13 @@ from queue import Empty
 from operator import itemgetter
 from datetime import datetime, timedelta
 
-from .transform import get_new_coords
-from .models import (hex_bounds, SpawnPoint, ScannedLocation,
+from pogom.transform import get_new_coords
+from pogom.models import (hex_bounds, SpawnPoint, ScannedLocation,
                      ScanSpawnPoint, HashKeys)
-from .utils import now, cur_sec, cellid, distance
-from .altitude import get_altitude
-from .geofence import Geofences
-from .cluster import cluster_spawnpoints
+from pogom.utils import now, cur_sec, cellid, distance
+from pogom.altitude import get_altitude
+from pogom.geofence import Geofences
+from pogom.cluster import cluster_spawnpoints
 
 log = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@
 import logging
 import requests
 import random
-from .models import LocationAltitude
+from pogom.models import LocationAltitude
 
 log = logging.getLogger(__name__)
 

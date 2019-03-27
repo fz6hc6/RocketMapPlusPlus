@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -14,7 +14,7 @@ from distutils.version import StrictVersion
 from threading import Thread, Event
 from queue import Queue
 from flask_cors import CORS
-from flask_cache_bust import init_cache_busting
+import pogom.flask_cache_bust
 
 from pogom.app import Pogom
 from pogom.utils import (get_args, now, log_resource_usage_loop, get_debug_dump_link,
@@ -211,6 +211,12 @@ def main():
 
     set_log_and_verbosity(log)
 
+    if (sys.version_info.major == 3):
+        log.info("Running under Python3")
+    else:
+        log.warning("Running under Python2")
+        sys.exit(1)
+
     global db_updates_queue
     global wh_updates_queue
 
@@ -268,7 +274,7 @@ def main():
     if not args.clear_db:
         app = Pogom(__name__,
                     root_path=os.path.dirname(
-                              os.path.abspath(__file__)).decode('utf8'),
+                              os.path.abspath(__file__)),
                     db_update_queue=db_updates_queue, wh_update_queue=wh_updates_queue)
         app.before_request(app.validate_request)
         app.set_current_location(position)
@@ -351,7 +357,7 @@ def main():
         CORS(app)
 
     # No more stale JS.
-    init_cache_busting(app)
+    pogom.flask_cache_bust.init_cache_busting(app)
 
     app.set_control_flags(control_flags)
     app.set_heartbeat_control(heartbeat)

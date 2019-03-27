@@ -4,7 +4,7 @@
 import requests
 import struct
 from time import time
-from .utils import get_args
+from pogom.utils import get_args
 
 
 class FakePogoApi:

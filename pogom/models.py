@@ -9,6 +9,8 @@ import gc
 import time
 import math
 
+from functools import reduce
+
 from peewee import (InsertQuery, Check, CompositeKey, ForeignKeyField,
                     SmallIntegerField, IntegerField, CharField, DoubleField,
                     BooleanField, DateTimeField, fn, DeleteQuery, FloatField,
@@ -18,7 +20,7 @@ from playhouse.flask_utils import FlaskDB
 from playhouse.pool import PooledMySQLDatabase
 from playhouse.shortcuts import RetryOperationalError, case
 from playhouse.migrate import migrate, MySQLMigrator
-from datetime import datetime, timedelta
+import datetime
 from cachetools import TTLCache
 from cachetools import cached
 from timeit import default_timer
@@ -26,21 +28,21 @@ import geopy
 from collections import OrderedDict
 from flask import json
 
-from .utils import (get_pokemon_name, get_pokemon_types,
+from pogom.utils import (get_pokemon_name, get_pokemon_types,
                     get_args, cellid, in_radius, date_secs, clock_between,
                     get_move_name, get_move_damage, get_move_energy,
                     get_move_type, calc_pokemon_level, peewee_attr_to_col,
                     get_quest_icon, get_quest_quest_text, get_quest_reward_text,
                     get_timezone_offset, point_is_scheduled)
-from .transform import transform_from_wgs_to_gcj, get_new_coords
-from .customLog import printPokemon
+from pogom.transform import transform_from_wgs_to_gcj, get_new_coords
+from pogom.customLog import printPokemon
 
-from .account import check_login, setup_api, pokestop_spinnable, spin_pokestop
-from .proxy import get_new_proxy
-from .apiRequests import encounter
+from pogom.account import check_login, setup_api, pokestop_spinnable, spin_pokestop
+from pogom.proxy import get_new_proxy
+from pogom.apiRequests import encounter
 
-from protos.pogoprotos.map.weather.gameplay_weather_pb2 import *
-from protos.pogoprotos.map.weather.weather_alert_pb2 import *
+from pogom.protos.pogoprotos.map.weather.gameplay_weather_pb2 import *
+from pogom.protos.pogoprotos.map.weather.weather_alert_pb2 import *
 
 log = logging.getLogger(__name__)
 
@@ -134,7 +136,7 @@ class Pokemon(LatLongModel):
     form = SmallIntegerField(null=True)
     weather_boosted_condition = SmallIntegerField(null=True)
     last_modified = DateTimeField(
-        null=True, index=True, default=datetime.utcnow)
+        null=True, index=True, default=datetime.datetime.utcnow)
 
     class Meta:
         indexes = (
@@ -145,7 +147,7 @@ class Pokemon(LatLongModel):
     @staticmethod
     def get_active(swLat, swLng, neLat, neLng, timestamp=0, oSwLat=None,
                    oSwLng=None, oNeLat=None, oNeLng=None, exclude=None):
-        now_date = datetime.utcnow()
+        now_date = datetime.datetime.utcnow()
         query = Pokemon.select()
 
         if exclude:
@@ -159,7 +161,7 @@ class Pokemon(LatLongModel):
             # If timestamp is known only load modified Pokemon.
             query = (query
                      .where(((Pokemon.last_modified >
-                              datetime.utcfromtimestamp(timestamp / 1000)) &
+                              datetime.datetime.utcfromtimestamp(timestamp / 1000)) &
                              (Pokemon.disappear_time > now_date)) &
                             ((Pokemon.latitude >= swLat) &
                              (Pokemon.longitude >= swLng) &
@@ -199,13 +201,13 @@ class Pokemon(LatLongModel):
             query = (Pokemon
                      .select()
                      .where((Pokemon.pokemon_id << ids) &
-                            (Pokemon.disappear_time > datetime.utcnow()))
+                            (Pokemon.disappear_time > datetime.datetime.utcnow()))
                      .dicts())
         else:
             query = (Pokemon
                      .select()
                      .where((Pokemon.pokemon_id << ids) &
-                            (Pokemon.disappear_time > datetime.utcnow()) &
+                            (Pokemon.disappear_time > datetime.datetime.utcnow()) &
                             (Pokemon.latitude >= swLat) &
                             (Pokemon.longitude >= swLng) &
                             (Pokemon.latitude <= neLat) &
@@ -226,7 +228,7 @@ class Pokemon(LatLongModel):
 
         # Allow 0 to query everything.
         if hours:
-            hours = datetime.utcnow() - timedelta(hours=hours)
+            hours = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
             # Not using WHERE speeds up the query.
             query = query.where(Pokemon.disappear_time > hours)
 
@@ -242,7 +244,7 @@ class Pokemon(LatLongModel):
     @cached(cache)
     def get_seen(timediff):
         if timediff:
-            timediff = datetime.utcnow() - timedelta(hours=timediff)
+            timediff = datetime.datetime.utcnow() - datetime.timedelta(hours=timediff)
 
         # Note: pokemon_id+0 forces SQL to ignore the pokemon_id index
         # and should use the disappear_time index and hopefully
@@ -298,7 +300,7 @@ class Pokemon(LatLongModel):
         :return: list of Pokemon appearances over a selected period
         '''
         if timediff:
-            timediff = datetime.utcnow() - timedelta(hours=timediff)
+            timediff = datetime.datetime.utcnow() - datetime.timedelta(hours=timediff)
         query = (Pokemon
                  .select(Pokemon.latitude, Pokemon.longitude,
                          Pokemon.pokemon_id,
@@ -331,7 +333,7 @@ class Pokemon(LatLongModel):
         :return: list of time appearances over a selected period.
         '''
         if timediff:
-            timediff = datetime.utcnow() - timedelta(hours=timediff)
+            timediff = datetime.datetime.utcnow() - datetime.timedelta(hours=timediff)
         query = (Pokemon
                  .select(Pokemon.disappear_time)
                  .where((Pokemon.pokemon_id == pokemon_id) &
@@ -353,7 +355,7 @@ class Quest(BaseModel):
     reward_item = Utf8mb4CharField(max_length=50, null=True)
     reward_amount = IntegerField(null=True)
     quest_json = TextField(null=True)
-    last_scanned = DateTimeField(default=datetime.utcnow, index=True)
+    last_scanned = DateTimeField(default=datetime.datetime.utcnow, index=True)
     expiration = DateTimeField(null=True, index=True)
 
     @staticmethod
@@ -380,11 +382,11 @@ class Quest(BaseModel):
 
         if not (swLat and swLng and neLat and neLng):
             query = (query
-                     .where(Quest.expiration >= datetime.utcnow())
+                     .where(Quest.expiration >= datetime.datetime.utcnow())
                      .dicts())
         else:
             query = (query
-                     .where((Quest.expiration >= datetime.utcnow()) &
+                     .where((Quest.expiration >= datetime.datetime.utcnow()) &
                             (Pokestop.latitude >= swLat) &
                             (Pokestop.longitude >= swLng) &
                             (Pokestop.latitude <= neLat) &
@@ -419,7 +421,7 @@ class Pokestop(LatLongModel):
     active_pokemon_id = SmallIntegerField(null=True)
     active_pokemon_expiration = DateTimeField(null=True, index=True)
     last_updated = DateTimeField(
-        null=True, index=True, default=datetime.utcnow)
+        null=True, index=True, default=datetime.datetime.utcnow)
 
     class Meta:
         indexes = ((('latitude', 'longitude'), False),)
@@ -441,7 +443,7 @@ class Pokestop(LatLongModel):
         elif timestamp > 0:
             query = (query
                      .where(((Pokestop.last_updated >
-                              datetime.utcfromtimestamp(timestamp / 1000))) &
+                              datetime.datetime.utcfromtimestamp(timestamp / 1000))) &
                             (Pokestop.latitude >= swLat) &
                             (Pokestop.longitude >= swLng) &
                             (Pokestop.latitude <= neLat) &
@@ -476,7 +478,7 @@ class Pokestop(LatLongModel):
         elif lured:
             query = (query
                      .where(((Pokestop.last_updated >
-                              datetime.utcfromtimestamp(timestamp / 1000))) &
+                              datetime.datetime.utcfromtimestamp(timestamp / 1000))) &
                             ((Pokestop.latitude >= swLat) &
                              (Pokestop.longitude >= swLng) &
                              (Pokestop.latitude <= neLat) &
@@ -496,7 +498,7 @@ class Pokestop(LatLongModel):
         # (potentially) large dict with append().
         gc.disable()
 
-        now_date = datetime.utcnow()
+        now_date = datetime.datetime.utcnow()
 
         pokestops = {}
         pokestop_ids = []
@@ -629,7 +631,7 @@ class Pokestop(LatLongModel):
 
         result['pokemon'] = []
 
-        now_date = datetime.utcnow()
+        now_date = datetime.datetime.utcnow()
 
         pokemon = (PokestopMember
                    .select(
@@ -721,7 +723,7 @@ class Pokestop(LatLongModel):
                 for p in queryDict:
                     pokestop_ids.append(p['pokestop_id'])
 
-                now_date = datetime.utcnow()
+                now_date = datetime.datetime.utcnow()
 
                 if len(pokestop_ids) > 0:
                     quests = (Quest
@@ -766,7 +768,7 @@ class Pokestop(LatLongModel):
 
             result = []
             while len(orderedpokestops) > 0:
-                value = orderedpokestops.items()[0][1]
+                value = list(orderedpokestops.items())[0][1]
                 result.append((value['latitude'], value['longitude'], value['key']))
                 newlat = value['latitude']
                 newlong = value['longitude']
@@ -787,7 +789,7 @@ class Gym(LatLongModel):
     longitude = DoubleField()
     total_cp = SmallIntegerField()
     last_modified = DateTimeField(index=True)
-    last_scanned = DateTimeField(default=datetime.utcnow, index=True)
+    last_scanned = DateTimeField(default=datetime.datetime.utcnow, index=True)
     is_in_battle = BooleanField(default=False)
     is_ex_raid_eligible = BooleanField(default=False)
 
@@ -806,7 +808,7 @@ class Gym(LatLongModel):
             results = (Gym
                        .select()
                        .where(((Gym.last_scanned >
-                                datetime.utcfromtimestamp(timestamp / 1000)) &
+                                datetime.datetime.utcfromtimestamp(timestamp / 1000)) &
                                (Gym.latitude >= swLat) &
                                (Gym.longitude >= swLng) &
                                (Gym.latitude <= neLat) &
@@ -919,7 +921,7 @@ class Gym(LatLongModel):
                          Raid.last_scanned)
                  .join(Gym, on=(Raid.gym_id == Gym.gym_id))
                  .join(GymDetails, on=(GymDetails.gym_id == Gym.gym_id))
-                 .where(Raid.end > datetime.utcnow())
+                 .where(Raid.end > datetime.datetime.utcnow())
                  .order_by(Raid.end.asc())
                  .dicts())
 
@@ -1067,10 +1069,10 @@ class Gym(LatLongModel):
                                 (Gym.longitude >= minlng) &
                                 (Gym.latitude <= maxlat) &
                                 (Gym.longitude <= maxlng) &
-                                (Gym.last_scanned < datetime.utcnow() - timedelta(seconds=60)))
+                                (Gym.last_scanned < datetime.datetime.utcnow() - datetime.timedelta(seconds=60)))
                          .dicts())
             else:
-                query = (query.where(Gym.last_scanned < datetime.utcnow() - timedelta(seconds=60)).dicts())
+                query = (query.where(Gym.last_scanned < datetime.datetime.utcnow() - datetime.timedelta(seconds=60)).dicts())
 
             if len(scheduled_points) > 0:
                 query = (query
@@ -1097,11 +1099,11 @@ class Gym(LatLongModel):
 
                 for r in raids:
                     if not isinstance(raidless, (bool)):
-                        if (r['pokemon_id'] is None and r['end'] > datetime.utcnow()) and r['start'] < datetime.utcnow():
+                        if (r['pokemon_id'] is None and r['end'] > datetime.datetime.utcnow()) and r['start'] < datetime.datetime.utcnow():
                             egg_todo.append(r['gym_id'])
-                    if (r['pokemon_id'] and r['end'] > datetime.utcnow()) or r['start'] > datetime.utcnow():
+                    if (r['pokemon_id'] and r['end'] > datetime.datetime.utcnow()) or r['start'] > datetime.datetime.utcnow():
                         gym_ids.remove(r['gym_id'])
-                    elif r['pokemon_id'] is None and r['end'] > datetime.utcnow() and r['start'] < datetime.utcnow():
+                    elif r['pokemon_id'] is None and r['end'] > datetime.datetime.utcnow() and r['start'] < datetime.datetime.utcnow():
                         egg_todo.append(r['gym_id'])
 
             if len(egg_todo) > 0:
@@ -1145,7 +1147,7 @@ class Gym(LatLongModel):
 
             result = []
             while len(orderedgyms) > 0:
-                value = orderedgyms.items()[0][1]
+                value = list(orderedgyms.items())[0][1]
                 orderedgyms.popitem(last=False)
                 if len(result) == 0 or geopy.distance.vincenty((newlat, newlong), (value['latitude'], value['longitude'])).km * 1000 > teleport_ignore:
                     result.append((value['latitude'], value['longitude'], value['key']))
@@ -1168,14 +1170,14 @@ class Raid(BaseModel):
     move_1 = SmallIntegerField(null=True)
     move_2 = SmallIntegerField(null=True)
     form = SmallIntegerField(null=True)
-    last_scanned = DateTimeField(default=datetime.utcnow, index=True)
+    last_scanned = DateTimeField(default=datetime.datetime.utcnow, index=True)
 
 
 class LocationAltitude(LatLongModel):
     cellid = UBigIntegerField(primary_key=True)
     latitude = DoubleField()
     longitude = DoubleField()
-    last_modified = DateTimeField(index=True, default=datetime.utcnow,
+    last_modified = DateTimeField(index=True, default=datetime.datetime.utcnow,
                                   null=True)
     altitude = DoubleField()
 
@@ -1251,7 +1253,7 @@ class DeviceWorker(LatLongModel):
     radius = SmallIntegerField(default=0)
     step = SmallIntegerField(default=0)
     last_scanned = DateTimeField(index=True)
-    last_updated = DateTimeField(index=True, default=datetime.utcnow)
+    last_updated = DateTimeField(index=True, default=datetime.datetime.utcnow)
     scans = UBigIntegerField(default=0)
     direction = Utf8mb4CharField(max_length=1, default="U")
     fetching = Utf8mb4CharField(max_length=50, default='IDLE')
@@ -1277,7 +1279,7 @@ class DeviceWorker(LatLongModel):
                 'centerlatitude': latitude,
                 'centerlongitude': longitude,
                 'last_scanned': None,  # Null value used as new flag.
-                'last_updated': datetime.utcnow(),  # Null value used as new flag.
+                'last_updated': datetime.datetime.utcnow(),  # Null value used as new flag.
                 'radius': 0,
                 'step': 0,
                 'scans': 0,
@@ -1367,7 +1369,7 @@ class ScannedLocation(LatLongModel):
     latitude = DoubleField()
     longitude = DoubleField()
     last_modified = DateTimeField(
-        index=True, default=datetime.utcnow, null=True)
+        index=True, default=datetime.datetime.utcnow, null=True)
     # Marked true when all five bands have been completed.
     done = BooleanField(default=False)
 
@@ -1410,12 +1412,12 @@ class ScannedLocation(LatLongModel):
     @staticmethod
     def get_recent(swLat, swLng, neLat, neLng, timestamp=0, oSwLat=None,
                    oSwLng=None, oNeLat=None, oNeLng=None):
-        activeTime = (datetime.utcnow() - timedelta(minutes=15))
+        activeTime = (datetime.datetime.utcnow() - datetime.timedelta(minutes=15))
         if timestamp > 0:
             query = (ScannedLocation
                      .select()
                      .where(((ScannedLocation.last_modified >=
-                              datetime.utcfromtimestamp(timestamp / 1000))) &
+                              datetime.datetime.utcfromtimestamp(timestamp / 1000))) &
                             (ScannedLocation.latitude >= swLat) &
                             (ScannedLocation.longitude >= swLng) &
                             (ScannedLocation.latitude <= neLat) &
@@ -1580,7 +1582,7 @@ class ScannedLocation(LatLongModel):
                 on=(ScannedLocation.cellid == ScanSpawnPoint.scannedlocation))
             .where(((ScannedLocation.last_modified >= (location_change_date)) &
                     (ScannedLocation.last_modified >
-                     (datetime.utcnow() - timedelta(minutes=60)))) | (
+                     (datetime.datetime.utcnow() - datetime.timedelta(minutes=60)))) | (
                          ScannedLocation.cellid << cellids))
             .group_by(ScanSpawnPoint.spawnpoint).alias('maxscan'))
         # As scan locations overlap,spawnpoints can belong to up to 3 locations
@@ -1666,8 +1668,8 @@ class ScannedLocation(LatLongModel):
         scan = ScannedLocation.db_format(scan, band, now_secs)
         bts = [scan['band' + str(i)] for i in range(1, 6)]
         bts = filter(lambda ms: ms > -1, bts)
-        bts_delta = map(lambda ms: (ms - basems) % 3600, bts)
-        bts_offsets = map(lambda ms: (ms + 1080) % 720 - 360, bts_delta)
+        bts_delta = list(map(lambda ms: (ms - basems) % 3600, bts))
+        bts_offsets = list(map(lambda ms: (ms + 1080) % 720 - 360, bts_delta))
         min_scan = min(bts_offsets)
         max_scan = max(bts_offsets)
         scan['width'] = max_scan - min_scan
@@ -1693,7 +1695,7 @@ class ScannedLocation(LatLongModel):
     @staticmethod
     def reset_bands(scan_loc):
         scan_loc['done'] = False
-        scan_loc['last_modified'] = datetime.utcnow()
+        scan_loc['last_modified'] = datetime.datetime.utcnow()
         for i in range(1, 6):
             scan_loc['band' + str(i)] = -1
 
@@ -1740,7 +1742,7 @@ class MainWorker(BaseModel):
     @staticmethod
     def get_account_stats(age_minutes=30):
         stats = {'working': 0, 'captcha': 0, 'failed': 0}
-        timeout = datetime.utcnow() - timedelta(minutes=age_minutes)
+        timeout = datetime.datetime.utcnow() - datetime.timedelta(minutes=age_minutes)
         with MainWorker.database().execution_context():
             account_stats = (MainWorker
                              .select(fn.SUM(MainWorker.accounts_working),
@@ -1759,7 +1761,7 @@ class MainWorker(BaseModel):
     @staticmethod
     def get_recent(age_minutes=30):
         status = []
-        timeout = datetime.utcnow() - timedelta(minutes=age_minutes)
+        timeout = datetime.datetime.utcnow() - datetime.timedelta(minutes=age_minutes)
         try:
             with MainWorker.database().execution_context():
                 query = (MainWorker
@@ -1799,17 +1801,17 @@ class WorkerStatus(LatLongModel):
                 'no_items': status['noitems'],
                 'skip': status['skip'],
                 'captcha': status['captcha'],
-                'last_modified': datetime.utcnow(),
+                'last_modified': datetime.datetime.utcnow(),
                 'message': status['message'],
                 'last_scan_date': status.get('last_scan_date',
-                                             datetime.utcnow()),
+                                             datetime.datetime.utcnow()),
                 'latitude': status.get('latitude', None),
                 'longitude': status.get('longitude', None)}
 
     @staticmethod
     def get_recent(age_minutes=30):
         status = []
-        timeout = datetime.utcnow() - timedelta(minutes=age_minutes)
+        timeout = datetime.datetime.utcnow() - datetime.timedelta(minutes=age_minutes)
         try:
             with WorkerStatus.database().execution_context():
                 query = (WorkerStatus
@@ -1912,7 +1914,7 @@ class SpawnPoint(LatLongModel):
             if timestamp > 0:
                 query = (
                     query.where(((SpawnPoint.last_scanned >
-                                  datetime.utcfromtimestamp(timestamp / 1000)))
+                                  datetime.datetime.utcfromtimestamp(timestamp / 1000)))
                                 & ((SpawnPoint.latitude >= swLat) &
                                    (SpawnPoint.longitude >= swLng) &
                                    (SpawnPoint.latitude <= neLat) &
@@ -2029,7 +2031,7 @@ class SpawnPoint(LatLongModel):
 
             result = []
             while len(orderedspawnpoints) > 0:
-                value = orderedspawnpoints.items()[0][1]
+                value = list(orderedspawnpoints.items())[0][1]
                 result.append((value['latitude'], value['longitude'], value['key']))
                 newlat = value['latitude']
                 newlong = value['longitude']
@@ -2162,7 +2164,7 @@ class SpawnPoint(LatLongModel):
                        .where(((ScannedLocation.last_modified
                                 >= (location_change_date)) & (
                            ScannedLocation.last_modified > (
-                               datetime.utcnow() - timedelta(minutes=60)))) |
+                               datetime.datetime.utcnow() - datetime.timedelta(minutes=60)))) |
                               (ScannedLocation.cellid << cellids))
                        .group_by(ScanSpawnPoint.spawnpoint)
                        .alias('maxscan'))
@@ -2365,7 +2367,7 @@ class SpawnpointDetectionData(BaseModel):
                        }
                       for i in range(len(query) - 1)
                       if query[i + 1]['scan_time'] - query[i]['scan_time'] <
-                      timedelta(hours=1)
+                      datetime.timedelta(hours=1)
                       ]
 
         start_end_list = []
@@ -2454,7 +2456,7 @@ class Versions(BaseModel):
 class GymMember(BaseModel):
     gym_id = Utf8mb4CharField(index=True)
     pokemon_uid = UBigIntegerField(index=True)
-    last_scanned = DateTimeField(default=datetime.utcnow, index=True)
+    last_scanned = DateTimeField(default=datetime.datetime.utcnow, index=True)
     deployment_time = DateTimeField()
     cp_decayed = SmallIntegerField()
 
@@ -2472,7 +2474,7 @@ class PokestopMember(BaseModel):
     form = SmallIntegerField(null=True)
     weather_boosted_condition = SmallIntegerField(null=True)
     last_modified = DateTimeField(
-        null=True, index=True, default=datetime.utcnow)
+        null=True, index=True, default=datetime.datetime.utcnow)
     distance = DoubleField()
 
 
@@ -2495,7 +2497,7 @@ class GymPokemon(BaseModel):
     costume = SmallIntegerField(null=True)
     form = SmallIntegerField(null=True)
     shiny = SmallIntegerField(null=True)
-    last_seen = DateTimeField(default=datetime.utcnow)
+    last_seen = DateTimeField(default=datetime.datetime.utcnow)
 
 
 class GymDetails(BaseModel):
@@ -2503,7 +2505,7 @@ class GymDetails(BaseModel):
     name = Utf8mb4CharField()
     description = TextField(null=True, default="")
     url = Utf8mb4CharField()
-    last_scanned = DateTimeField(default=datetime.utcnow)
+    last_scanned = DateTimeField(default=datetime.datetime.utcnow)
 
 
 class PokestopDetails(BaseModel):
@@ -2511,19 +2513,19 @@ class PokestopDetails(BaseModel):
     name = Utf8mb4CharField()
     description = TextField(null=True, default="")
     url = Utf8mb4CharField()
-    last_scanned = DateTimeField(default=datetime.utcnow)
+    last_scanned = DateTimeField(default=datetime.datetime.utcnow)
 
 
 class Token(BaseModel):
     token = TextField()
-    last_updated = DateTimeField(default=datetime.utcnow, index=True)
+    last_updated = DateTimeField(default=datetime.datetime.utcnow, index=True)
 
     @staticmethod
     def get_valid(limit=15):
         # Make sure we don't grab more than we can process
         if limit > 15:
             limit = 15
-        valid_time = datetime.utcnow() - timedelta(seconds=30)
+        valid_time = datetime.datetime.utcnow() - datetime.timedelta(seconds=30)
         token_ids = []
         tokens = []
         try:
@@ -2561,7 +2563,7 @@ class Weather(BaseModel):
     severity = SmallIntegerField(null=True, index=True, default=0)
     warn_weather = SmallIntegerField(null=True, index=True, default=0)
     time_of_day = SmallIntegerField(null=True, index=True, default=0)
-    last_updated = DateTimeField(default=datetime.utcnow, null=True, index=True)
+    last_updated = DateTimeField(default=datetime.datetime.utcnow, null=True, index=True)
 
 
     @staticmethod
@@ -2605,7 +2607,7 @@ class HashKeys(BaseModel):
     remaining = IntegerField(default=0)
     peak = IntegerField(default=0)
     expires = DateTimeField(null=True)
-    last_updated = DateTimeField(default=datetime.utcnow)
+    last_updated = DateTimeField(default=datetime.datetime.utcnow)
 
     # Obfuscate hashing keys before sending them to the front-end.
     @staticmethod
@@ -2624,7 +2626,7 @@ class HashKeys(BaseModel):
                 query = (HashKeys
                          .select(HashKeys.key, HashKeys.peak)
                          .where(HashKeys.last_updated >
-                                (datetime.utcnow() - timedelta(minutes=30)))
+                                (datetime.datetime.utcnow() - datetime.timedelta(minutes=30)))
                          .dicts())
                 for dbhk in query:
                     hashkeys[dbhk['key']] = dbhk['peak']
@@ -2678,7 +2680,7 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
     for i, cell in enumerate(cells):
         # If we have map responses then use the time from the request
         if i == 0:
-            now_date = datetime.utcfromtimestamp(
+            now_date = datetime.datetime.utcfromtimestamp(
                 cell.current_timestamp_ms / 1000)
 
         nearby_pokemon += len(cell.nearby_pokemons)
@@ -2756,7 +2758,7 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
             # time_till_hidden_ms was overflowing causing a negative integer.
             # It was also returning a value above 3.6M ms.
             if 0 < p.time_till_hidden_ms < 3600000:
-                d_t_secs = date_secs(datetime.utcfromtimestamp(
+                d_t_secs = date_secs(datetime.datetime.utcfromtimestamp(
                     (p.last_modified_timestamp_ms +
                      p.time_till_hidden_ms) / 1000.0))
 
@@ -2801,7 +2803,7 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
                                                  sighting)
                 sightings[p.encounter_id] = sighting
 
-            sp['last_scanned'] = datetime.utcfromtimestamp(
+            sp['last_scanned'] = datetime.datetime.utcfromtimestamp(
                 p.last_modified_timestamp_ms / 1000.0)
 
             if ((p.encounter_id, spawn_id) in encountered_pokemon):
@@ -2812,7 +2814,7 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
             start_end = SpawnPoint.start_end(sp, 1)
             seconds_until_despawn = (start_end[1] - now_secs) % 3600
             disappear_time = now_date + \
-                timedelta(seconds=seconds_until_despawn)
+                datetime.timedelta(seconds=seconds_until_despawn)
 
             pokemon_id = p.pokemon_data.pokemon_id
 
@@ -2911,16 +2913,16 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
                         Pokestop.pokestop_id, Pokestop.last_modified).where(
                             (Pokestop.pokestop_id << stop_ids)).dicts())
                     encountered_pokestops = [(f['pokestop_id'], int(
-                        (f['last_modified'] - datetime(1970, 1,
+                        (f['last_modified'] - datetime.datetime(1970, 1,
                                                        1)).total_seconds()))
                                              for f in query]
 
         for f in forts:
             if not args.no_pokestops and f.type == 1:  # Pokestops.
                 if len(f.active_fort_modifier) > 0:
-                    lure_expiration = (datetime.utcfromtimestamp(
+                    lure_expiration = (datetime.datetime.utcfromtimestamp(
                         f.last_modified_timestamp_ms / 1000.0) +
-                        timedelta(minutes=args.lure_duration))
+                        datetime.timedelta(minutes=args.lure_duration))
                     active_fort_modifier = f.active_fort_modifier[0]
                 else:
                     lure_expiration, active_fort_modifier = None, None
@@ -2936,7 +2938,7 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
                     'enabled': f.enabled,
                     'latitude': f.latitude,
                     'longitude': f.longitude,
-                    'last_modified': datetime.utcfromtimestamp(
+                    'last_modified': datetime.datetime.utcfromtimestamp(
                         f.last_modified_timestamp_ms / 1000.0),
                     'lure_expiration': lure_expiration,
                     'active_fort_modifier': active_fort_modifier
@@ -2999,7 +3001,7 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
                         'lowest_pokemon_motivation':
                             gym_display.lowest_pokemon_motivation,
                         'occupied_since':
-                            calendar.timegm((datetime.utcnow() - timedelta(
+                            calendar.timegm((datetime.datetime.utcnow() - datetime.timedelta(
                                 milliseconds=gym_display.occupied_millis)
                                             ).timetuple()),
                         'last_modified':
@@ -3027,7 +3029,7 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
                     'longitude':
                         f.longitude,
                     'last_modified':
-                        datetime.utcfromtimestamp(
+                        datetime.datetime.utcfromtimestamp(
                             f.last_modified_timestamp_ms / 1000.0),
 
                 }
@@ -3037,11 +3039,11 @@ def parse_map(args, map_dict, scan_coords, scan_location, db_update_queue,
                         raids[f.id] = {
                             'gym_id': f.id,
                             'level': raid_info.raid_level,
-                            'spawn': datetime.utcfromtimestamp(
+                            'spawn': datetime.datetime.utcfromtimestamp(
                                 raid_info.raid_spawn_ms / 1000.0),
-                            'start': datetime.utcfromtimestamp(
+                            'start': datetime.datetime.utcfromtimestamp(
                                 raid_info.raid_battle_ms / 1000.0),
-                            'end': datetime.utcfromtimestamp(
+                            'end': datetime.datetime.utcfromtimestamp(
                                 raid_info.raid_end_ms / 1000.0),
                             'pokemon_id': None,
                             'cp': None,
@@ -3354,8 +3356,8 @@ def parse_gyms(args, gym_responses, wh_update_queue, db_update_queue):
                 'cp_decayed':
                     member.motivated_pokemon.cp_now,
                 'deployment_time':
-                    datetime.utcnow() -
-                    timedelta(milliseconds=member.deployment_totals
+                    datetime.datetime.utcnow() -
+                    datetime.timedelta(milliseconds=member.deployment_totals
                               .deployment_duration_ms)
             }
             gym_pokemon[i] = {
@@ -3377,7 +3379,7 @@ def parse_gyms(args, gym_responses, wh_update_queue, db_update_queue):
                 'costume': pokemon.pokemon_display.costume,
                 'form': pokemon.pokemon_display.form,
                 'shiny': pokemon.pokemon_display.shiny,
-                'last_seen': datetime.utcnow(),
+                'last_seen': datetime.datetime.utcnow(),
             }
 
             if 'gym-info' in args.wh_types:
@@ -3503,7 +3505,7 @@ def db_cleanup_regular():
     log.debug('Regular database cleanup started.')
     start_timer = default_timer()
 
-    now = datetime.utcnow()
+    now = datetime.datetime.utcnow()
     # http://docs.peewee-orm.com/en/latest/peewee/database.html#advanced-connection-management
     # When using an execution context, a separate connection from the pool
     # will be used inside the wrapped block and a transaction will be started.
@@ -3511,7 +3513,7 @@ def db_cleanup_regular():
         # Remove unusable captcha tokens.
         query = (Token
                  .delete()
-                 .where(Token.last_updated < now - timedelta(seconds=120)))
+                 .where(Token.last_updated < now - datetime.timedelta(seconds=120)))
         query.execute()
 
         # Remove active modifier from expired lured pokestops.
@@ -3523,8 +3525,8 @@ def db_cleanup_regular():
         # Remove expired or inactive hashing keys.
         query = (HashKeys
                  .delete()
-                 .where((HashKeys.expires < now - timedelta(days=1)) |
-                        (HashKeys.last_updated < now - timedelta(days=7))))
+                 .where((HashKeys.expires < now - datetime.timedelta(days=1)) |
+                        (HashKeys.last_updated < now - datetime.timedelta(days=7))))
         query.execute()
 
     time_diff = default_timer() - start_timer
@@ -3535,7 +3537,7 @@ def db_cleanup_worker_status(age_minutes):
     log.debug('Beginning cleanup of old worker status.')
     start_timer = default_timer()
 
-    worker_status_timeout = datetime.utcnow() - timedelta(minutes=age_minutes)
+    worker_status_timeout = datetime.datetime.utcnow() - datetime.timedelta(minutes=age_minutes)
 
     with MainWorker.database().execution_context():
         # Remove status information from inactive instances.
@@ -3559,7 +3561,7 @@ def db_clean_pokemons(age_hours):
     log.debug('Beginning cleanup of old pokemon spawns.')
     start_timer = default_timer()
 
-    pokemon_timeout = datetime.utcnow() - timedelta(hours=age_hours)
+    pokemon_timeout = datetime.datetime.utcnow() - datetime.timedelta(hours=age_hours)
 
     with PokestopMember.database().execution_context():
         query = (PokestopMember
@@ -3585,7 +3587,7 @@ def db_clean_gyms(age_hours, gyms_age_days=30):
     log.debug('Beginning cleanup of old gym data.')
     start_timer = default_timer()
 
-    gym_info_timeout = datetime.utcnow() - timedelta(hours=age_hours)
+    gym_info_timeout = datetime.datetime.utcnow() - datetime.timedelta(hours=age_hours)
 
     with Gym.database().execution_context():
         # Remove old GymDetails entries.
@@ -3627,7 +3629,7 @@ def db_clean_spawnpoints(age_hours, missed=5):
     # Maximum number of variables to include in a single query.
     step = 500
 
-    spawnpoint_timeout = datetime.utcnow() - timedelta(hours=age_hours)
+    spawnpoint_timeout = datetime.datetime.utcnow() - datetime.timedelta(hours=age_hours)
 
     with SpawnPoint.database().execution_context():
         # Select old SpawnPoint entries.
@@ -3728,7 +3730,7 @@ def db_clean_forts(age_hours):
     log.debug('Beginning cleanup of old forts.')
     start_timer = default_timer()
 
-    fort_timeout = datetime.utcnow() - timedelta(hours=age_hours)
+    fort_timeout = datetime.datetime.utcnow() - datetime.timedelta(hours=age_hours)
 
     with Gym.database().execution_context():
         # Remove old Gym entries.
@@ -3788,7 +3790,7 @@ def bulk_upsert(cls, data, db):
     # placeholders for VALUES(%s, %s, ...) so we can use executemany().
     # We use peewee's InsertQuery to retrieve the fields because it
     # takes care of peewee's internals (e.g. required default fields).
-    query = InsertQuery(cls, rows=[rows[0]])
+    query = InsertQuery(cls, rows=[list(rows)[0]])
     # Take the first row. We need to call _iter_rows() for peewee internals.
     # Using next() for a single item is not considered "pythonic".
     first_row = {}
@@ -3797,9 +3799,9 @@ def bulk_upsert(cls, data, db):
         break
     # Convert the row to its fields, sorted by peewee.
     row_fields = sorted(first_row.keys(), key=lambda x: x._sort_key)
-    row_fields = map(lambda x: x.name, row_fields)
+    row_fields = list(map(lambda x: x.name, row_fields))
     # Translate to proper column name, e.g. foreign keys.
-    db_columns = [peewee_attr_to_col(cls, f) for f in row_fields]
+    db_columns = list([peewee_attr_to_col(cls, f) for f in row_fields])
 
     # Store defaults so we can fall back to them if a value
     # isn't set.
@@ -3813,8 +3815,8 @@ def bulk_upsert(cls, data, db):
 
     # Assign fields, placeholders and assignments after defaults
     # so our lists/keys stay in order.
-    table = '`'+conn.escape_string(cls._meta.db_table)+'`'
-    escaped_fields = ['`'+conn.escape_string(f)+'`' for f in db_columns]
+    table = '`'+(conn.escape_string(cls._meta.db_table))+'`'
+    escaped_fields = ['`'+(conn.escape_string(f))+'`' for f in db_columns]
     placeholders = ['%s' for escaped_field in escaped_fields]
     assignments = ['{x} = VALUES({x})'.format(
         x=escaped_field
@@ -3847,7 +3849,7 @@ def bulk_upsert(cls, data, db):
                 # values for executemany(), and fall back to defaults if
                 # necessary.
                 batch = []
-                batch_rows = rows[i:min(i + step, num_rows)]
+                batch_rows = list(rows)[i:min(i + step, num_rows)]
 
                 # We pop them off one by one so we can gradually release
                 # memory as we pass each item. No duplicate memory usage.
@@ -4022,7 +4024,7 @@ def database_migrate(db, old_ver):
                                 SmallIntegerField(null=False, default=0)),
             migrator.add_column('gymmember', 'deployment_time',
                                 DateTimeField(
-                                    null=False, default=datetime.utcnow())),
+                                    null=False, default=datetime.datetime.utcnow())),
             migrator.add_column('gym', 'total_cp',
                                 SmallIntegerField(null=False, default=0))
         )
@@ -4189,7 +4191,7 @@ def database_migrate(db, old_ver):
     if old_ver < 38:
         migrate(
             migrator.add_column('deviceworker', 'last_updated',
-                                DateTimeField(index=True, default=datetime.utcnow))
+                                DateTimeField(index=True, default=datetime.datetime.utcnow))
         )
 
     if old_ver < 40:

@@ -5,7 +5,7 @@ import sys
 import timeit
 import logging
 
-from .utils import get_args
+from pogom.utils import get_args
 
 log = logging.getLogger(__name__)
 
