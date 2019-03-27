@@ -19,7 +19,7 @@ from pogom.dyn_img import get_gym_icon
 from pogom.weather import get_weather_cells, get_s2_coverage, get_weather_alerts
 from base64 import b64decode
 
-from schedules import getschedule
+from schedules import main
 
 import gpxpy
 
@@ -2942,9 +2942,9 @@ class Pogom(Flask):
             from .geofence import Geofences
             self.geofences = Geofences()
 
-        schedule = getschedule(mapcontrolled, uuid, latitude, longitude, request_json, args, deviceworker,
-                               self.deviceschedules, self.devicesscheduling, self.devices, self.geofences,
-                               log)
+        schedule = main.getschedule(mapcontrolled, uuid, latitude, longitude, request_json, args, deviceworker,
+                                    self.deviceschedules, self.devicesscheduling, self.devices, self.geofences,
+                                    log)
 
         return redirect(schedule)
 
