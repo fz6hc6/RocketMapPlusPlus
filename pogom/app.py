@@ -19,7 +19,7 @@ from pogom.dyn_img import get_gym_icon
 from pogom.weather import get_weather_cells, get_s2_coverage, get_weather_alerts
 from base64 import b64decode
 
-from schedules import *
+from schedules import getschedule
 
 import gpxpy
 
