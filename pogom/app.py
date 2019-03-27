@@ -5,7 +5,6 @@ import calendar
 import logging
 import gc
 import os
-import math
 
 import time
 from datetime import datetime, timedelta
@@ -19,6 +18,8 @@ from pogom.transform import jitter_location
 from pogom.dyn_img import get_gym_icon
 from pogom.weather import get_weather_cells, get_s2_coverage, get_weather_alerts
 from base64 import b64decode
+
+from schedules import *
 
 import gpxpy
 
@@ -37,7 +38,6 @@ from .transform import transform_from_wgs_to_gcj
 from .blacklist import fingerprints, get_ip_blacklist
 from .customLog import printPokemon
 import re
-import json
 from werkzeug.datastructures import MultiDict
 
 import geopy
@@ -219,6 +219,7 @@ class Pogom(Flask):
             self.devices[uuid]['route'] = ''
             self.devices[uuid]['no_overlap'] = False
             self.devices[uuid]['mapcontrolled'] = False
+            self.devices[uuid]['scheduled'] = False
         device = self.devices[uuid].copy()
 
         last_updated = device['last_updated']
@@ -233,10 +234,12 @@ class Pogom(Flask):
             route = self.devices[uuid].get('route', '')
             no_overlap = self.devices[uuid].get('no_overlap', False)
             mapcontrolled = self.devices[uuid].get('mapcontrolled', False)
+            scheduled = self.devices[uuid].get('scheduled', False)
             self.devices[uuid] = DeviceWorker.get_by_id(uuid, lat, lng)
             self.devices[uuid]['route'] = route
             self.devices[uuid]['no_overlap'] = no_overlap
             self.devices[uuid]['mapcontrolled'] = mapcontrolled
+            self.devices[uuid]['scheduled'] = scheduled
             device = self.devices[uuid].copy()
 
         return device
@@ -262,6 +265,8 @@ class Pogom(Flask):
                 del deviceworkers[uuid]['no_overlap']
             if 'mapcontrolled' in deviceworkers[uuid]:
                 del deviceworkers[uuid]['mapcontrolled']
+            if 'scheduled' in deviceworkers[uuid]:
+                del deviceworkers[uuid]['scheduled']
 
             self.db_update_queue.put((DeviceWorker, deviceworkers))
 
@@ -2922,7 +2927,28 @@ class Pogom(Flask):
 
         return jsonify(d)
 
-    def walk_spawnpoint(self, mapcontrolled, uuid, latitude, longitude, request_json):
+    def scheduled(self, mapcontrolled, scheduled, uuid, latitude, longitude, request_json):
+        args = get_args()
+
+        if latitude == 0 and longitude == 0:
+            latitude = self.current_location[0]
+            longitude = self.current_location[1]
+
+        deviceworker = self.get_device(uuid, latitude, longitude)
+
+        self.track_event('fetch', 'scheduled', uuid)
+
+        if not self.geofences:
+            from .geofence import Geofences
+            self.geofences = Geofences()
+
+        schedule = getschedule(mapcontrolled, uuid, latitude, longitude, request_json, args, deviceworker,
+                               self.deviceschedules, self.devicesscheduling, self.devices, self.geofences,
+                               log)
+
+        return redirect(schedule)
+
+    def walk_spawnpoint(self, mapcontrolled, scheduled, uuid, latitude, longitude, request_json):
         args = get_args()
 
         if latitude == 0 and longitude == 0:
@@ -3022,6 +3048,14 @@ class Pogom(Flask):
                     mapcontrolled = False
             except:
                 pass
+        if not isinstance(scheduled, bool):
+            try:
+                if scheduled.lower() == 'true':
+                    scheduled = True
+                else:
+                    scheduled = False
+            except:
+                pass
         if not isinstance(speed, (int, long)):
             try:
                 speed = int(speed)
@@ -3035,6 +3069,7 @@ class Pogom(Flask):
 
         deviceworker['no_overlap'] = no_overlap
         deviceworker['mapcontrolled'] = mapcontrolled
+        deviceworker['scheduled'] = scheduled
 
         if (deviceworker['fetching'] == 'IDLE' and difference > scheduletimeout * 60) or (deviceworker['fetching'] != 'IDLE' and deviceworker['fetching'] != "walk_spawnpoint"):
             self.deviceschedules[uuid] = []
@@ -3073,7 +3108,7 @@ class Pogom(Flask):
             if unknown_tth and len(self.deviceschedules[uuid]) == 0:
                 self.deviceschedules[uuid] = SpawnPoint.get_nearby_spawnpoints(latitude, longitude, maxradius, False, maxpoints, geofence, scheduled_points, self.geofences)
             if len(self.deviceschedules[uuid]) == 0:
-                return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
+                return self.scan_loc(mapcontrolled, scheduled, uuid, latitude, longitude, request_json)
         else:
             nextlatitude = deviceworker['latitude']
             nextlongitude = deviceworker['longitude']
@@ -3117,7 +3152,7 @@ class Pogom(Flask):
 
         return jsonify(d)
 
-    def walk_gpx(self, mapcontrolled, uuid, latitude, longitude, request_json):
+    def walk_gpx(self, mapcontrolled, scheduled, uuid, latitude, longitude, request_json):
         args = get_args()
 
         if latitude == 0 and longitude == 0:
@@ -3176,6 +3211,14 @@ class Pogom(Flask):
                     mapcontrolled = False
             except:
                 pass
+        if not isinstance(scheduled, bool):
+            try:
+                if scheduled.lower() == 'true':
+                    scheduled = True
+                else
+                    scheduled = False
+            except:
+                pass
         if not isinstance(speed, (int, long)):
             try:
                 speed = int(speed)
@@ -3188,6 +3231,7 @@ class Pogom(Flask):
                 pass
 
         deviceworker['mapcontrolled'] = mapcontrolled
+        deviceworker['scheduled'] = scheduled
         deviceworker['no_overlap'] = False
 
         last_updated = deviceworker['last_updated']
@@ -3220,12 +3264,12 @@ class Pogom(Flask):
                     routename + ".gpx")
             if gpxfilename == "" or not os.path.isfile(gpxfilename):
                 log.warning("No or incorrect GPX supplied: {}".format(gpxfilename))
-                return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
+                return self.scan_loc(mapcontrolled, scheduled, uuid, latitude, longitude, request_json)
 
             self.devicesscheduling.append(uuid)
             self.deviceschedules[uuid] = self.get_gpx_route(gpxfilename)
             if len(self.deviceschedules[uuid]) == 0:
-                return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
+                return self.scan_loc(mapcontrolled, scheduled, uuid, latitude, longitude, request_json)
             deviceworker['route'] = routename
             self.save_device(deviceworker)
 
@@ -3271,7 +3315,7 @@ class Pogom(Flask):
 
         return jsonify(d)
 
-    def walk_pokestop(self, mapcontrolled, uuid, latitude, longitude, request_json):
+    def walk_pokestop(self, mapcontrolled, scheduled, uuid, latitude, longitude, request_json):
         args = get_args()
 
         if latitude == 0 and longitude == 0:
@@ -3373,6 +3417,7 @@ class Pogom(Flask):
 
         deviceworker['no_overlap'] = no_overlap
         deviceworker['mapcontrolled'] = mapcontrolled
+        deviceworker['scheduled'] = scheduled
 
         last_updated = deviceworker['last_updated']
         difference = (datetime.utcnow() - last_updated).total_seconds()
@@ -3413,7 +3458,7 @@ class Pogom(Flask):
             if questless and len(self.deviceschedules[uuid]) == 0:
                 self.deviceschedules[uuid] = Pokestop.get_nearby_pokestops(latitude, longitude, maxradius, False, maxpoints, geofence, scheduled_points, self.geofences)
             if len(self.deviceschedules[uuid]) == 0:
-                return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
+                return self.scan_loc(mapcontrolled, scheduled, uuid, latitude, longitude, request_json)
         else:
             nextlatitude = deviceworker['latitude']
             nextlongitude = deviceworker['longitude']
@@ -3457,7 +3502,7 @@ class Pogom(Flask):
 
         return jsonify(d)
 
-    def teleport_gym(self, mapcontrolled, uuid, latitude, longitude, request_json):
+    def teleport_gym(self, mapcontrolled, scheduled, uuid, latitude, longitude, request_json):
         deviceworker = self.get_device(uuid, latitude, longitude)
 
         args = get_args()
@@ -3568,6 +3613,7 @@ class Pogom(Flask):
 
         deviceworker['no_overlap'] = no_overlap
         deviceworker['mapcontrolled'] = mapcontrolled
+        deviceworker['scheduled'] = scheduled
 
         last_updated = deviceworker['last_updated']
         difference = (dt_now - last_updated).total_seconds()
@@ -3638,7 +3684,7 @@ class Pogom(Flask):
             if raidless and len(self.deviceschedules[uuid]) == 0:
                 self.deviceschedules[uuid] = Gym.get_nearby_gyms(latitude, longitude, maxradius, teleport_ignore, False, maxpoints, geofence, scheduled_points, self.geofences, exraidonly, oldest_first)
             if len(self.deviceschedules[uuid]) == 0:
-                return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
+                return self.scan_loc(mapcontrolled, scheduled, uuid, latitude, longitude, request_json)
 
             self.devices_last_teleport_time[uuid] = dt_now
             self.save_device(deviceworker)
@@ -3666,7 +3712,7 @@ class Pogom(Flask):
 
         return jsonify(d)
 
-    def teleport_gpx(self, mapcontrolled, uuid, latitude, longitude, request_json):
+    def teleport_gpx(self, mapcontrolled, scheduled, uuid, latitude, longitude, request_json):
         args = get_args()
         dt_now = datetime.utcnow()
 
@@ -3729,6 +3775,7 @@ class Pogom(Flask):
 
         deviceworker['no_overlap'] = False
         deviceworker['mapcontrolled'] = mapcontrolled
+        deviceworker['scheduled'] = scheduled
 
         last_updated = deviceworker['last_updated']
         difference = (dt_now - last_updated).total_seconds()
@@ -3791,12 +3838,12 @@ class Pogom(Flask):
                     routename + ".gpx")
             if gpxfilename == "" or not os.path.isfile(gpxfilename):
                 log.warning("No or incorrect GPX supplied: {}".format(gpxfilename))
-                return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
+                return self.scan_loc(mapcontrolled, scheduled, uuid, latitude, longitude, request_json)
 
             self.devicesscheduling.append(uuid)
             self.deviceschedules[uuid] = self.get_gpx_route(gpxfilename)
             if len(self.deviceschedules[uuid]) == 0:
-                return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
+                return self.scan_loc(mapcontrolled, scheduled, uuid, latitude, longitude, request_json)
             self.devices_last_teleport_time[uuid] = dt_now
             deviceworker['route'] = routename
             self.save_device(deviceworker)
@@ -3901,6 +3948,17 @@ class Pogom(Flask):
             log.info('Device {} updating deviceusername: {} => {}'.format(uuid, deviceworker['name'], devicename))
             deviceworker['name'] = devicename
             self.save_device(deviceworker, True)
+        # scheduled
+        scheduled = request_json.get('scheduled', False)
+        if not isinstance(scheduled, bool):
+            try:
+                if scheduled.lower() == 'true':
+                    scheduled = True
+                else:
+                    scheduled = False
+            except:
+                pass
+        deviceworker["scheduled"] = scheduled
 # Update deviceusername
         requestedEndpoint = re.sub(r'((\?|\&)longitude=-?[0-9]*\.?[0-9]*)|((\?|\&)latitude=-?[0-9]*\.?[0-9]*)|((\?|\&)timestamp=[0-9]*\.[0-9]*)|((\?|\&)uuid=[A-F0-9-]{36})','',request.full_path)
         if requestedEndpoint != "" and requestedEndpoint != deviceworker['requestedEndpoint']:
@@ -3923,32 +3981,34 @@ class Pogom(Flask):
             for pair in endpointMC_attribArray:
                 endpointMC_attribMD.add(re.sub("=.*","", pair),re.sub(".*=",'',pair))
             if (endpointMC_base == "" or endpointMC.lower() == "scan_loc"):
-                return self.scan_loc(True, uuid, latitude, longitude, endpointMC_attribMD)
+                return self.scan_loc(True,scheduled, uuid, latitude, longitude, endpointMC_attribMD)
             elif (endpointMC_base == "teleport_gym"):
-                return self.teleport_gym(True, uuid, latitude, longitude, endpointMC_attribMD)
+                return self.teleport_gym(True, scheduled, uuid, latitude, longitude, endpointMC_attribMD)
             elif (endpointMC_base.lower() == "teleport_gpx"):
-                return self.teleport_gpx(True, uuid, latitude, longitude, endpointMC_attribMD)
+                return self.teleport_gpx(True, scheduled, uuid, latitude, longitude, endpointMC_attribMD)
             elif (endpointMC_base.lower() == "walk_pokestop"):
-                return self.walk_pokestop(True, uuid, latitude, longitude, endpointMC_attribMD)
+                return self.walk_pokestop(True, scheduled, uuid, latitude, longitude, endpointMC_attribMD)
             elif (endpointMC_base.lower() == "walk_gpx"):
-                return self.walk_gpx(True, uuid, latitude, longitude, endpointMC_attribMD)
+                return self.walk_gpx(True, scheduled, uuid, latitude, longitude, endpointMC_attribMD)
             elif (endpointMC_base.lower() == "walk_spawnpoint"):
-                return self.walk_spawnpoint(True, uuid, latitude, longitude, endpointMC_attribMD)
+                return self.walk_spawnpoint(True, scheduled, uuid, latitude, longitude, endpointMC_attribMD)
+            elif (endpointMC_base.lower() == "scheduled"):
+                return self.scheduled(True, scheduled, uuid, latitude, longitude, endpointMC_attribMD)
             return "Endpoint {} (mapcontrolled) not converted ".format(endpoint)
 
 #Device requiested endpoints
         elif (endpoint.lower() == "teleport_gym"):
-            return self.teleport_gym(False, uuid, latitude, longitude, request_json)
+            return self.teleport_gym(False, scheduled, uuid, latitude, longitude, request_json)
         elif (endpoint.lower() == "scan_loc"):
-            return self.scan_loc(False, uuid, latitude, longitude, request_json)
+            return self.scan_loc(False, scheduled, uuid, latitude, longitude, request_json)
         elif (endpoint.lower() == "teleport_gpx"):
-            return self.teleport_gpx(False, uuid, latitude, longitude, request_json)
+            return self.teleport_gpx(False, scheduled, uuid, latitude, longitude, request_json)
         elif (endpoint.lower() == "walk_pokestop"):
-            return self.walk_pokestop(False, uuid, latitude, longitude, request_json)
+            return self.walk_pokestop(False, scheduled, uuid, latitude, longitude, request_json)
         elif (endpoint.lower() == "walk_gpx"):
-            return self.walk_gpx(False, uuid, latitude, longitude, request_json)
+            return self.walk_gpx(False, scheduled, uuid, latitude, longitude, request_json)
         elif (endpoint.lower() == "walk_spawnpoint"):
-            return self.walk_spawnpoint(False, uuid, latitude, longitude, request_json)
+            return self.walk_spawnpoint(False, scheduled, uuid, latitude, longitude, request_json)
         elif (endpoint.lower() == "dummy"):
             return "Dummmy :D"
         return "Endpoint {} not converted.".format(endpoint)

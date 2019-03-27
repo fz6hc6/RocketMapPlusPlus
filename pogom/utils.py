@@ -331,6 +331,12 @@ def get_args():
     parser.add_argument('-uu', '--use-username',
                         help=('Use account username as device friendly name'),
                         action='store_true', default=True)
+    parser.add_argument('-frh', '--first-raid-hour',
+                        help=('First Raid hour'),
+                        type=int, default=6)
+    parser.add_argument('-lrh', '--last-raid-hour',
+                        help=('Last Raid hour'),
+                        type=int, default=21)
     group = parser.add_argument_group('Database')
     group.add_argument(
         '--db-name', help='Name of the database to be used.', required=True)

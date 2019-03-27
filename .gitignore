@@ -13,6 +13,10 @@ devices/*
 !devices/*.example
 gpx/*
 !gpx/*.example
+schedules/*
+!schedules/__init__.py
+!schedules/helpers.py
+!schedules/main.py
 static/dist/
 node_modules/
 venv/

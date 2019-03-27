@@ -6,6 +6,7 @@ import timeit
 import logging
 
 from .utils import get_args
+from .utils import get_timezone_offset
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +37,18 @@ class Geofences:
             log.info('Loaded %d geofenced and %d excluded areas.',
                      len(self.geofenced_areas),
                      len(self.excluded_areas))
+
+            for area in self.geofenced_areas:
+                swLat, swLng, neLat, neLng = self.get_boundary_coords(area["name"])
+                area["centerlat"] = (swLat + neLat) / 2
+                area["centerlong"] = (swLng + neLng) / 2
+                area["timezone_offset"] = get_timezone_offset(area["centerlat"], area["centerlong"])
+
+            for area in self.excluded_areas:
+                swLat, swLng, neLat, neLng = self.get_boundary_coords(area["name"])
+                area["centerlat"] = (swLat + neLat) / 2
+                area["centerlong"] = (swLng + neLng) / 2
+                area["timezone_offset"] = get_timezone_offset(area["centerlat"], area["centerlong"])
 
     def is_enabled(self):
         return (self.geofenced_areas or self.excluded_areas)
