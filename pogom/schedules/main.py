@@ -6,7 +6,7 @@ def getschedule(mapcontrolled, uuid, latitude, longitude, request_json, args, de
     schedule = "scan_loc?scheduled=true"
 
     schedulename = ""
-    schedulename = request_json.get('route', "", type=str)
+    schedulename = request_json.get('schedule', "", type=str)
     if schedulename is None or schedulename == "":
         schedulename = uuid
 
