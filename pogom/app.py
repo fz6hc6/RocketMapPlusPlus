@@ -3215,7 +3215,7 @@ class Pogom(Flask):
             try:
                 if scheduled.lower() == 'true':
                     scheduled = True
-                else
+                else:
                     scheduled = False
             except:
                 pass
