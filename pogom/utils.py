@@ -334,6 +334,9 @@ def get_args():
     parser.add_argument('-ier', '--include-ex-raids',
                         help=('Show Ex Raids on the map'),
                         action='store_true', default=False)
+    parser.add_argument('-cerb', '--current-ex-raid-boss',
+                        help=('The pokemon id of the current ex raid boss'),
+                        type=int, default=0)
 
     group = parser.add_argument_group('Database')
     group.add_argument(

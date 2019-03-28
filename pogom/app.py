@@ -1486,6 +1486,8 @@ class Pogom(Flask):
                                         raidpokemonid = raidinfo['raidPokemon']['pokemonId'] if 'raidPokemon' in raidinfo and 'pokemonId' in raidinfo['raidPokemon'] else None
                                         if raidpokemonid:
                                             raidpokemonid = _POKEMONID.values_by_name[raidpokemonid].number
+                                        if raidpokemonid is None and fort["raidInfo"].get('isExclusive', False) and args.current_ex_raid_boss > 0:
+                                            raidpokemonid = args.current_ex_raid_boss
                                         raidpokemoncp = raidinfo['raidPokemon']['cp'] if 'raidPokemon' in raidinfo and 'cp' in raidinfo['raidPokemon'] else None
                                         raidpokemonmove1 = raidinfo['raidPokemon']['move1'] if 'raidPokemon' in raidinfo and 'move1' in raidinfo['raidPokemon'] else None
                                         if raidpokemonmove1:
