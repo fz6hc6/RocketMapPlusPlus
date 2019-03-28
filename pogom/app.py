@@ -158,6 +158,8 @@ class Pogom(Flask):
         self.route("/new_name", methods=['POST'])(self.new_name)
         self.route("/new_username", methods=['POST'])(self.new_username)
 
+        self.route("/nearby", methods=['GET'])(self.nearby)
+
         self.route("/mobile", methods=['GET'])(self.list_pokemon)
         self.route("/search_control", methods=['GET'])(self.get_search_control)
         self.route("/search_control", methods=['POST'])(
@@ -4093,6 +4095,36 @@ class Pogom(Flask):
             self.set_current_location((lat, lon, 0))
             log.info('Changing next location: %s,%s', lat, lon)
             return self.loc()
+
+    def nearby(self):
+        lat = None
+        lon = None
+        # Part of query string.
+        if request.args:
+            lat = request.args.get('lat', type=float)
+            lon = request.args.get('lon', type=float)
+            max_dist = request.args.get('max_dist', 0.035, type=float)
+            max_length = request.args.get('max_length', 20, type=int)
+        # From post requests.
+        if request.form:
+            lat = request.form.get('lat', type=float)
+            lon = request.form.get('lon', type=float)
+            max_dist = request.form.get('max_dist', 0.035, type=float)
+            max_length = request.form.get('max_length', 20, type=int)
+
+        if not (lat and lon):
+            log.warning('Invalid next location: (%s,%s)', lat, lon)
+            return 'bad parameters', 400
+        else:
+            # Exclude ids of Pokemon that are hidden.
+            d = {}
+            eids = []
+            request_eids = request.args.get('eids')
+            if request_eids:
+                eids = {int(i) for i in request_eids.split(',')}
+
+            d['nearby'] = Pokemon.get_nearby(lat, lng, exclude=eids, max_dist=max_dist, max_length=max_length)
+            return jsonify(d)
 
     def new_name(self):
         name = None

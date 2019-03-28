@@ -344,6 +344,54 @@ class Pokemon(LatLongModel):
 
         return list(itertools.chain(*query))
 
+    @staticmethod
+    def get_nearby(lat, lng, exclude=None, max_dist=0.035, max_length=20):
+        now_date = datetime.utcnow()
+        query = Pokemon.select(Pokemon.latitude, Pokemon.longitude,
+                               Pokemon.pokemon_id, Pokemon.encounter_id)
+
+        swLat = lat - 0.001
+        neLat = lat + 0.001
+        swLng = lng - 0.001
+        neLng = lng + 0.001
+
+        if exclude:
+            query = query.where(Pokemon.pokemon_id.not_in(list(exclude)))
+
+        query = (query
+                 .where((Pokemon.disappear_time > now_date) &
+                        (Pokemon.individual_attack.is_null()) &
+                        (((Pokemon.latitude >= swLat) &
+                          (Pokemon.longitude >= swLng) &
+                          (Pokemon.latitude <= neLat) &
+                          (Pokemon.longitude <= neLng))))
+                 .dicts())
+
+        pokemon = []
+        tempdict = {}
+        for p in query:
+            key = p['encounter_id']
+            latitude = round(p['latitude'], 5)
+            longitude = round(p['longitude'], 5)
+            distance = geopy.distance.vincenty((lat, lng), (latitude, longitude)).km
+            if distance <= max_dist:
+                tempdict[key] = {
+                    'latitude': latitude,
+                    'longitude': longitude,
+                    'distance': distance,
+                    'encounter_id': key,
+                    'pokemon_id': p['pokemon_id'],
+                }
+        orderedpokemon = OrderedDict(sorted(tempdict.items(), key=lambda x: x[1]['distance']))
+
+        while len(orderedpokemon) > max_length:
+            orderedpokemon.popitem()
+
+        for encounter_id, poke in orderedpokemon.items():
+            pokemon.append(poke)
+
+        return list(pokemon)
+
 
 class Quest(BaseModel):
     pokestop_id = Utf8mb4CharField(primary_key=True, max_length=50)
