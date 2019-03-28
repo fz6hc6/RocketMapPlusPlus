@@ -331,6 +331,10 @@ def get_args():
     parser.add_argument('-uu', '--use-username',
                         help=('Use account username as device friendly name'),
                         action='store_true', default=True)
+    parser.add_argument('-ier', '--include-ex-raids',
+                        help=('Show Ex Raids on the map'),
+                        action='store_true', default=False)
+
     group = parser.add_argument_group('Database')
     group.add_argument(
         '--db-name', help='Name of the database to be used.', required=True)

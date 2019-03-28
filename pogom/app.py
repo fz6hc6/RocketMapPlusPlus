@@ -1481,7 +1481,7 @@ class Pogom(Flask):
 
                                         self.wh_update_queue.put(('gym_details', webhook_data))
 
-                                    if 'raidInfo' in fort and not fort["raidInfo"].get('complete', False) and not fort["raidInfo"].get('isExclusive', False):
+                                    if 'raidInfo' in fort and not fort["raidInfo"].get('complete', False) and not fort["raidInfo"].get('isExclusive', args.include_ex_raids):
                                         raidinfo = fort["raidInfo"]
                                         raidpokemonid = raidinfo['raidPokemon']['pokemonId'] if 'raidPokemon' in raidinfo and 'pokemonId' in raidinfo['raidPokemon'] else None
                                         if raidpokemonid:
