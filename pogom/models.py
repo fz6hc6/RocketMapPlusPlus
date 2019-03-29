@@ -1084,7 +1084,7 @@ class Gym(LatLongModel):
 
             if oldest_first and not isinstance(maxpoints, (bool)):
                 query = (query
-                         .limit(maxpoints)limit
+                         .limit(maxpoints)
                          .dicts())
 
             queryDict = query.order_by(Gym.last_scanned.asc()).dicts()
