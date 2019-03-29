@@ -3567,6 +3567,14 @@ class Pogom(Flask):
                     exraidonly = False
             except:
                 pass
+        if not isinstance(oldest_first, bool):
+            try:
+                if oldest_first.lower() == 'true':
+                    oldest_first = True
+                else:
+                    oldest_first = False
+            except:
+                pass
 
         deviceworker['no_overlap'] = no_overlap
         deviceworker['mapcontrolled'] = mapcontrolled
