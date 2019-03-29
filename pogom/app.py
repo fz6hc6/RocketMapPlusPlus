@@ -4123,7 +4123,7 @@ class Pogom(Flask):
             if request_eids:
                 eids = {int(i) for i in request_eids.split(',')}
 
-            d['nearby'] = Pokemon.get_nearby(lat, lng, exclude=eids, max_dist=max_dist, max_length=max_length)
+            d['nearby'] = Pokemon.get_nearby(lat, lon, exclude=eids, max_dist=max_dist, max_length=max_length)
             return jsonify(d)
 
     def new_name(self):
