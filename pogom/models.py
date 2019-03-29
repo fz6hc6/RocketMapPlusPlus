@@ -1082,9 +1082,9 @@ class Gym(LatLongModel):
                          .where(Gym.is_ex_raid_eligible)
                          .dicts())
 
-            if oldest_first and (not isinstance(maxpoints, (bool)):
+            if oldest_first and not isinstance(maxpoints, (bool)):
                 query = (query
-                         .limit(maxpoints)
+                         .limit(maxpoints)limit
                          .dicts())
 
             queryDict = query.order_by(Gym.last_scanned.asc()).dicts()
