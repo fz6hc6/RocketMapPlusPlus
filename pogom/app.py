@@ -2969,6 +2969,7 @@ class Pogom(Flask):
         unknown_tth = request_json.get('unknown_tth', False)
         maxpoints = request_json.get('maxpoints', False)
         geofence = request_json.get('geofence', "")
+        routing_outside_geofences = request_json.get('ignore_geofences', False)
         no_overlap = request_json.get('no_overlap', False)
         speed = request_json.get('speed', args.speed)
         arrived_range = request_json.get('arrived_range', args.arrived_range)
@@ -3006,6 +3007,14 @@ class Pogom(Flask):
                     maxpoints = False
                 else:
                     maxpoints = int(maxpoints)
+            except:
+                pass
+        if not isinstance(routing_outside_geofences, bool):
+            try:
+                if routing_outside_geofences.lower() == 'true':
+                    routing_outside_geofences = True
+                else:
+                    routing_outside_geofences = False
             except:
                 pass
         if not isinstance(no_overlap, bool):
@@ -3069,11 +3078,11 @@ class Pogom(Flask):
                 from .geofence import Geofences
                 self.geofences = Geofences()
 
-            self.deviceschedules[uuid] = SpawnPoint.get_nearby_spawnpoints(latitude, longitude, maxradius, unknown_tth, maxpoints, geofence, scheduled_points, self.geofences)
+            self.deviceschedules[uuid] = SpawnPoint.get_nearby_spawnpoints(latitude, longitude, maxradius, unknown_tth, maxpoints, geofence, scheduled_points, self.geofences, routing_outside_geofences)
             nextlatitude = latitude
             nextlongitude = longitude
             if unknown_tth and len(self.deviceschedules[uuid]) == 0:
-                self.deviceschedules[uuid] = SpawnPoint.get_nearby_spawnpoints(latitude, longitude, maxradius, False, maxpoints, geofence, scheduled_points, self.geofences)
+                self.deviceschedules[uuid] = SpawnPoint.get_nearby_spawnpoints(latitude, longitude, maxradius, False, maxpoints, geofence, scheduled_points, self.geofences, routing_outside_geofences)
             if len(self.deviceschedules[uuid]) == 0:
                 return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
         else:
@@ -3315,6 +3324,7 @@ class Pogom(Flask):
         questless = request_json.get('questless', False)
         maxpoints = request_json.get('maxpoints', False)
         geofence = request_json.get('geofence', "")
+        routing_outside_geofences = request_json.get('ignore_geofences', False)
         no_overlap = request_json.get('no_overlap', False)
         speed = request_json.get('speed', args.speed)
         arrived_range = request_json.get('arrived_range', args.arrived_range)
@@ -3352,6 +3362,14 @@ class Pogom(Flask):
                     maxpoints = False
                 else:
                     maxpoints = int(maxpoints)
+            except:
+                pass
+        if not isinstance(routing_outside_geofences, bool):
+            try:
+                if routing_outside_geofences.lower() == 'true':
+                    routing_outside_geofences = True
+                else:
+                    routing_outside_geofences = False
             except:
                 pass
         if not isinstance(no_overlap, bool):
@@ -3409,11 +3427,11 @@ class Pogom(Flask):
                 from .geofence import Geofences
                 self.geofences = Geofences()
 
-            self.deviceschedules[uuid] = Pokestop.get_nearby_pokestops(latitude, longitude, maxradius, questless, maxpoints, geofence, scheduled_points, self.geofences)
+            self.deviceschedules[uuid] = Pokestop.get_nearby_pokestops(latitude, longitude, maxradius, questless, maxpoints, geofence, scheduled_points, self.geofences, routing_outside_geofences)
             nextlatitude = latitude
             nextlongitude = longitude
             if questless and len(self.deviceschedules[uuid]) == 0:
-                self.deviceschedules[uuid] = Pokestop.get_nearby_pokestops(latitude, longitude, maxradius, False, maxpoints, geofence, scheduled_points, self.geofences)
+                self.deviceschedules[uuid] = Pokestop.get_nearby_pokestops(latitude, longitude, maxradius, False, maxpoints, geofence, scheduled_points, self.geofences, routing_outside_geofences)
             if len(self.deviceschedules[uuid]) == 0:
                 return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
         else:
@@ -3499,6 +3517,7 @@ class Pogom(Flask):
         raidless = request_json.get('raidless', False)
         maxpoints = request_json.get('maxpoints', False)
         geofence = request_json.get('geofence', "")
+        routing_outside_geofences = request_json.get('ignore_geofences', False)
         no_overlap = request_json.get('no_overlap', False)
         exraidonly = request_json.get('exraidonly', False)
         oldest_first = request_json.get('oldest_first', False)
@@ -3541,6 +3560,14 @@ class Pogom(Flask):
                     maxpoints = False
                 else:
                     maxpoints = int(maxpoints)
+            except:
+                pass
+        if not isinstance(routing_outside_geofences, bool):
+            try:
+                if routing_outside_geofences.lower() == 'true':
+                    routing_outside_geofences = True
+                else:
+                    routing_outside_geofences = False
             except:
                 pass
         if not isinstance(no_overlap, bool):
@@ -3644,9 +3671,9 @@ class Pogom(Flask):
 
             log.warning("Geofences: ".format(geofence))
 
-            self.deviceschedules[uuid] = Gym.get_nearby_gyms(latitude, longitude, maxradius, teleport_ignore, raidless, maxpoints, geofence, scheduled_points, self.geofences, exraidonly, oldest_first)
+            self.deviceschedules[uuid] = Gym.get_nearby_gyms(latitude, longitude, maxradius, teleport_ignore, raidless, maxpoints, geofence, scheduled_points, self.geofences, exraidonly, oldest_first, routing_outside_geofences)
             if raidless and len(self.deviceschedules[uuid]) == 0:
-                self.deviceschedules[uuid] = Gym.get_nearby_gyms(latitude, longitude, maxradius, teleport_ignore, False, maxpoints, geofence, scheduled_points, self.geofences, exraidonly, oldest_first)
+                self.deviceschedules[uuid] = Gym.get_nearby_gyms(latitude, longitude, maxradius, teleport_ignore, False, maxpoints, geofence, scheduled_points, self.geofences, exraidonly, oldest_first, routing_outside_geofences)
             if len(self.deviceschedules[uuid]) == 0:
                 return self.scan_loc(mapcontrolled, uuid, latitude, longitude, request_json)
 

@@ -680,7 +680,7 @@ class Pokestop(LatLongModel):
         return result
 
     @staticmethod
-    def get_nearby_pokestops(lat, lng, dist, questless, maxpoints, geofence_name, scheduled_points, geofences):
+    def get_nearby_pokestops(lat, lng, dist, questless, maxpoints, geofence_name, scheduled_points, geofences, routing_outside_geofences):
         pokestops = {}
         with Pokestop.database().execution_context():
             query = (Pokestop.select(
@@ -737,7 +737,7 @@ class Pokestop(LatLongModel):
                     for q in quests:
                         pokestop_quest_ids.append(q['pokestop_id'])
 
-            if len(queryDict) > 0 and geofences.is_enabled():
+            if len(queryDict) > 0 and geofences.is_enabled() and not routing_outside_geofences:
                 queryDict = geofences.get_geofenced_results(queryDict, geofence_name)
 
             for p in queryDict:
@@ -1048,7 +1048,7 @@ class Gym(LatLongModel):
         return False
 
     @staticmethod
-    def get_nearby_gyms(lat, lng, dist, teleport_ignore, raidless, maxpoints, geofence_name, scheduled_points, geofences, exraidonly, oldest_first):
+    def get_nearby_gyms(lat, lng, dist, teleport_ignore, raidless, maxpoints, geofence_name, scheduled_points, geofences, exraidonly, oldest_first, routing_outside_geofences):
         gyms = {}
         with Gym.database().execution_context():
             query = (Gym.select(
@@ -1116,7 +1116,7 @@ class Gym(LatLongModel):
             elif (not isinstance(raidless, (bool)) and len(gym_ids) > raidless):
                 gym_ids = gym_ids[:raidless]
 
-            if len(queryDict) > 0 and geofences.is_enabled():
+            if len(queryDict) > 0 and geofences.is_enabled() and not routing_outside_geofences:
                 queryDict = geofences.get_geofenced_results(queryDict, geofence_name)
 
             for g in queryDict:
@@ -1971,7 +1971,7 @@ class SpawnPoint(LatLongModel):
         return list(spawnpoints.values())
 
     @staticmethod
-    def get_nearby_spawnpoints(lat, lng, dist, unknown_tth, maxpoints, geofence_name, scheduled_points, geofences):
+    def get_nearby_spawnpoints(lat, lng, dist, unknown_tth, maxpoints, geofence_name, scheduled_points, geofences, routing_outside_geofences):
         spawnpoints = {}
         with SpawnPoint.database().execution_context():
             query = (SpawnPoint.select(
@@ -2007,7 +2007,7 @@ class SpawnPoint(LatLongModel):
 
             queryDict = query.dicts()
 
-            if len(queryDict) > 0 and geofences.is_enabled():
+            if len(queryDict) > 0 and geofences.is_enabled() and not routing_outside_geofences:
                 queryDict = geofences.get_geofenced_results(queryDict, geofence_name)
 
             for sp in queryDict:
