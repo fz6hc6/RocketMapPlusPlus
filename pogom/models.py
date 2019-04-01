@@ -1082,12 +1082,14 @@ class Gym(LatLongModel):
                          .where(Gym.is_ex_raid_eligible)
                          .dicts())
 
+            query = query.order_by(Gym.last_scanned.asc()).dicts()
+
             if oldest_first and not isinstance(maxpoints, (bool)):
                 query = (query
                          .limit(maxpoints)
                          .dicts())
 
-            queryDict = query.order_by(Gym.last_scanned.asc()).dicts()
+            queryDict = query.dicts()
 
             gym_ids = []
             egg_todo = []
